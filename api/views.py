@@ -56,60 +56,25 @@ class UsuarioIDView(APIView):
 
 
 
-# Google Login
-class LoginGoogleView(APIView):
+#/login
+class LoginView(APIView):
     def post(self,request,format=None):
-        if request.headers.get('Authorization') is not None:
-            
-            token = request.headers.get('Authorization')
-            idinfo = None
+        email = request.data.get('email')
+        try:
+            usuario = Usuario.objects.get(email=email)
+        except:
+            usuario = Usuario(
+                nombre = request.data.get('nombre'),
+                apellido = "",
+                email = email,
+                username = ""
+            )
             try:
-                idinfo = id_token.verify_oauth2_token(token, transport.requests.Request(), CLIENT_ID)
-            except:
-                return Response({"mensaje": "Token caducado"}, status=status.HTTP_400_BAD_REQUEST)
-
-            email = idinfo['email']
-            usuario = None
-            try:
-                usuario = Usuario.objects.get(email=email)
-            except:
-
-                name = idinfo['given_name']
-                try:
-                    apellidos = idinfo['family_name']
-                except:
-                    apellidos = ""
-                imagen = idinfo['picture']
-
-                
-                usuario = Usuario(
-                    email = email,
-                    username = "prueba",
-                    nombre = name,
-                    apellidos = apellidos
-                )
-
                 usuario.save()
-
-            userDTO = UsuarioDTO(usuario)
-            serializer = UsuarioSerializer(userDTO)
-            return Response(serializer.data,status=status.HTTP_200_OK)
-
-        else :
-            return Response({"mensaje" : "Es necesario el header Authorization"}, status=status.HTTP_400_BAD_REQUEST)
-
-class LoginGoogleCheckView(APIView):
-    def post(self,request,format=None):
-        if request.headers.get('Authorization') is not None:
-            
-            token = request.headers.get('Authorization')
-            idinfo = None
-            try:
-                id_token.verify_oauth2_token(token, transport.requests.Request(), CLIENT_ID)
             except:
-                return Response({"mensaje": "caducado"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'Error':'No se ha podido crear el usuario'},status=status.HTTP_400_BAD_REQUEST)
 
-            return Response({"mensaje" : "ok"},status=status.HTTP_200_OK)
+        usuarioDTO = UsuarioDTO(usuario)
+        serializer = UsuarioSerializer(usuarioDTO)        
 
-        else :
-            return Response({"mensaje" : "header"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.data,status=status.HTTP_200_OK)

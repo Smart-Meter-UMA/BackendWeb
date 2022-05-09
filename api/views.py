@@ -70,7 +70,6 @@ class LoginGoogleView(APIView):
 
             email = idinfo['email']
             usuario = None
-
             try:
                 usuario = Usuario.objects.get(email=email)
             except:

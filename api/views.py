@@ -1,3 +1,4 @@
+from urllib import response
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
@@ -46,15 +47,42 @@ class UsuarioView(APIView):
 
 class UsuarioIDView(APIView):
     def get(self,request,id,format=None):
-        usuario = Usuario.objects.get(id=id)
+        try:
+            usuario = Usuario.objects.get(id=id)
+        except:
+            return Response({"mensaje":"Error: No se ha encontrado un usuario con ese ID"},status=status.HTTP_404_NOT_FOUND)
 
         usuarioDTO = UsuarioDTO(usuario)
-
         serializer = UsuarioSerializer(usuarioDTO)
-
         return Response(serializer.data,status=status.HTTP_200_OK)
 
+    def put(self,request,id,format=None):
+        try:
+            usuario = Usuario.objects.get(id=id)
+        except:
+            return Response({"mensaje":"Error: No se ha encontrado un usuario con ese ID."},status=status.HTTP_404_NOT_FOUND)
+        serializer = UsuarioSerializer(data=request.data)
+        if serializer.is_valid():
+            usuario.nombre = serializer.validated_data.get("nombre")
+            usuario.apellidos = serializer.validated_data.get("apellidos")
+            try:
+                usuario.save()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            except:
+                return Response({"mensaje":"Error: El usuario no ha podido ser actualizado."},status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"mensaje":"Error: El formato del usuario es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self,request,id,format=None):
+        try:
+            usuario = Usuario.objects.get(id=id)
+        except:
+            return Response({"mensaje":"Error: No se ha encontrado un usuario con ese ID"},status=status.HTTP_404_NOT_FOUND)
+        try:
+            usuario.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except:
+            return Response({"mensaje":"Error: No se ha podido eliminar un usuario con ese ID"},status=status.HTTP_400_BAD_REQUEST)
 
 #/login
 class LoginView(APIView):
@@ -65,7 +93,7 @@ class LoginView(APIView):
         except:
             usuario = Usuario(
                 nombre = request.data.get('nombre'),
-                apellido = "",
+                apellidos = "",
                 email = email,
                 username = ""
             )

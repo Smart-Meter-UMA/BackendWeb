@@ -5,9 +5,9 @@ from api.models import Usuario
 class UsuarioSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False)
     email = serializers.EmailField()
-    username = serializers.CharField(max_length=30)
-    nombre = serializers.CharField(max_length=30)
-    apellidos = serializers.CharField(max_length=30)
+    username = serializers.CharField(max_length=30, required=False, allow_blank=True)
+    nombre = serializers.CharField(max_length=30, required=False, allow_blank=True)
+    apellidos = serializers.CharField(required=False, max_length=30, allow_blank=True)
 
 class HogarSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False)

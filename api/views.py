@@ -2,9 +2,9 @@ from urllib import response
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
-from api.dto import UsuarioDTO
-from api.models import Usuario
-from api.serializers import UsuarioSerializer
+from api.dto import DispositivoDTO, HogarDTO, MedidaDTO, UsuarioDTO
+from api.models import Dispositivo, Hogar, Medida, Usuario
+from api.serializers import DispositivoSerializer, HogarSerializer, MedidaSerializer, UsuarioSerializer
 from google.oauth2 import id_token
 from google.auth import transport
 from datetime import date
@@ -44,7 +44,24 @@ class UsuarioView(APIView):
 
         return Response(serializer.data,status=status.HTTP_200_OK,headers={"X-TOTAL-COUNT":usuarios.count()})
 
+    def post(self,request,format=None):
+        serializer = UsuarioSerializer(data=request.data)
+        if serializer.is_valid():
+            usuario = Usuario(
+                nombre = serializer.validated_data.get("nombre"),
+                apellidos = serializer.validated_data.get("apellidos"),
+                username = serializer.validated_data.get("username"),
+                email = serializer.validated_data.get("email")
+            )
+            try:
+                usuario.save()
+                return Response(status=status.HTTP_201_CREATED)
+            except:
+                return Response({"mensaje":"Error: El usuario no ha podido ser crear."},status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"mensaje":"Error: El formato del usuario es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
 
+#/usuarios/:id
 class UsuarioIDView(APIView):
     def get(self,request,id,format=None):
         try:
@@ -83,6 +100,202 @@ class UsuarioIDView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except:
             return Response({"mensaje":"Error: No se ha podido eliminar un usuario con ese ID"},status=status.HTTP_400_BAD_REQUEST)
+
+#/usuarios/:id/hogars
+class UsuariosIDHogaresView(APIView):
+    def get(self,request,id,format=None):
+        try:
+            hogars = Hogar.objects.get(owner__id=id)
+        except:
+            return Response({"mensaje":"Error: No se ha encontrado un usuario con ese ID"},status=status.HTTP_404_NOT_FOUND)
+
+        hogarsDTO = HogarDTO.toHogarsDTO(hogars)
+        serializer = HogarSerializer(hogarsDTO,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK,headers={"X-TOTAL-COUNT":hogars.count()})
+
+
+
+#/hogars
+class HogarView(APIView):
+    def get(self,request,format=None):
+        hogars = Hogar.objects.all()
+
+        hogarsDto = HogarDTO.toHogarsDTO(hogars)
+
+        serializer = HogarSerializer(hogarsDto,many=True)
+
+        return Response(serializer.data,status=status.HTTP_200_OK,headers={"X-TOTAL-COUNT":hogars.count()})
+
+    def post(self,request,format=None):
+        serializer = HogarSerializer(data=request.data)
+        if serializer.is_valid():
+            hogar = Hogar(
+                nombre = serializer.validated_data.get("nombre"),
+                owner = Usuario.objects.get(id=serializer.validated_data.pop("owner").get("id"))
+            )
+            try:
+                hogar.save()
+                return Response(status=status.HTTP_201_CREATED)
+            except:
+                return Response({"mensaje":"Error: El hogar no ha podido ser creado."},status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"mensaje":"Error: El formato del hogar es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
+
+
+#/hogars/:id
+class HogarIDView(APIView):
+    def get(self,request,id,format=None):
+        try:
+            hogar = Hogar.objects.get(id=id)
+        except:
+            return Response({"mensaje":"Error: No se ha encontrado ese hogar con ese ID"},status=status.HTTP_404_NOT_FOUND)
+
+        hogarDto = HogarDTO(hogar)
+
+        serializer = HogarSerializer(hogarDto)
+
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    
+    def put(self,request,id,format=None):
+        try:
+            hogar = Hogar.objects.get(id=id)
+        except:
+            return Response({"mensaje":"Error: No se ha encontrado un hogar con ese ID."},status=status.HTTP_404_NOT_FOUND)
+        serializer = HogarSerializer(data=request.data)
+        if serializer.is_valid():
+            hogar.nombre = serializer.validated_data.get("nombre")
+            try:
+                hogar.save()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            except:
+                return Response({"mensaje":"Error: El hogar no ha podido ser actualizado."},status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"mensaje":"Error: El formato del hogar es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self,request,id,format=None):
+        try:
+            hogar = Hogar.objects.get(id=id)
+        except:
+            return Response({"mensaje":"Error: No se ha encontrado un hogar con ese ID"},status=status.HTTP_404_NOT_FOUND)
+        try:
+            hogar.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except:
+            return Response({"mensaje":"Error: No se ha podido eliminar un hogar con ese ID"},status=status.HTTP_400_BAD_REQUEST)
+
+#/hogars/:id/dispositivos
+class HogarsIDispositivosView(APIView):
+    def get(self,request,id,format=None):
+        try:
+            dispositivos = Dispositivo.objects.get(hogar__id=id)
+        except:
+            return Response({"mensaje":"Error: No se ha encontrado los dispisitivos de esa hogar con ese ID"},status=status.HTTP_404_NOT_FOUND)
+
+        dipositivosDTO = DispositivoDTO.toDispositivoDTO(dispositivos)
+        serializer = DispositivoSerializer(dipositivosDTO,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK,headers={"X-TOTAL-COUNT":dispositivos.count()})
+
+
+#/dispositivos
+class DispositivosView(APIView):
+    def get(self,request,format=None):
+        dispositivos = Dispositivo.objects.all()
+
+        dispositivosDTO = DispositivoDTO.toDispositivoDTO(dispositivos)
+
+        serializer = DispositivoSerializer(dispositivosDTO,many=True)
+
+        return Response(serializer.data,status=status.HTTP_200_OK,headers={"X-TOTAL-COUNT":dispositivos.count()})
+
+    def post(self,request,format=None):
+        #Falta por ver como se hace
+        serializer = DispositivoSerializer(data=request.data)
+        if serializer.is_valid():
+            dispositivo = Dispositivo(
+                nombre = serializer.validated_data.get("nombre"),
+                potencia_contratada = serializer.validated_data.get("potencia_contratada"),
+                hogar = Hogar.objects.get(id=serializer.validated_data.pop("hogar").get("id"))
+            )
+            try:
+                dispositivo.save()
+                return Response(status=status.HTTP_201_CREATED)
+            except:
+                return Response({"mensaje":"Error: El dispositivo no ha podido ser creado."},status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"mensaje":"Error: El formato del dispositivo es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
+
+#/dispositivos/:id
+class DispositivoIDView(APIView):
+    def get(self,request,id,format=None):
+        try:
+            dispositivo = Dispositivo.objects.get(id=id)
+        except:
+            return Response({"mensaje":"Error: No se ha encontrado ese dispositivo con ese ID"},status=status.HTTP_404_NOT_FOUND)
+
+        dispositivoDTO = DispositivoDTO(dispositivo)
+
+        serializer = DispositivoSerializer(dispositivoDTO)
+
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    
+    def put(self,request,id,format=None):
+        try:
+            dipositivo = Dispositivo.objects.get(id=id)
+        except:
+            return Response({"mensaje":"Error: No se ha encontrado un dispositivo con ese ID."},status=status.HTTP_404_NOT_FOUND)
+        serializer = HogarSerializer(data=request.data)
+        if serializer.is_valid():
+            dipositivo.nombre = serializer.validated_data.get("nombre"),
+            dipositivo.potencia_contratada = serializer.validated_data.get("potencia_contratada"),
+            try:
+                dipositivo.save()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            except:
+                return Response({"mensaje":"Error: El dispositivo no ha podido ser actualizado."},status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"mensaje":"Error: El formato del dispositivo es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self,request,id,format=None):
+        try:
+            dispositivo = Dispositivo.objects.get(id=id)
+        except:
+            return Response({"mensaje":"Error: No se ha encontrado un dispositivo con ese ID"},status=status.HTTP_404_NOT_FOUND)
+        try:
+            dispositivo.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except:
+            return Response({"mensaje":"Error: No se ha podido eliminar un dispositivo con ese ID"},status=status.HTTP_400_BAD_REQUEST)
+
+#/dispositivos/:id/medidas
+class DispositivoIDMedidadView(APIView):
+    def get(self,request,id,format=None):
+        try:
+            medidas = Medida.objects.get(dispositivo__id=id)
+        except:
+            return Response({"mensaje":"Error: No se ha encontrado las medidas de ese dispositivo con ese ID"},status=status.HTTP_404_NOT_FOUND)
+
+        medidasDTO = MedidaDTO.toMedidaDTO(medidas)
+        serializer = MedidaSerializer(medidasDTO,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK,headers={"X-TOTAL-COUNT":medidas.count()})
+
+
+#/medidas
+class MedidaView(APIView):
+    def get(self,request,format=None):
+        medidas = Medida.objects.all()
+
+        medidasDTO = MedidaDTO.toMedidaDTO(medidas)
+
+        serializer = MedidaSerializer(medidasDTO,many=True)
+
+        return Response(serializer.data,status=status.HTTP_200_OK,headers={"X-TOTAL-COUNT":medidas.count()})
+
+    
+
+
+
+
+
 
 #/login
 class LoginView(APIView):

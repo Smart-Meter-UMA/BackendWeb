@@ -12,7 +12,7 @@ class UsuarioSerializer(serializers.Serializer):
 class HogarSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False)
     nombre = serializers.CharField(max_length=20)
-    owner = UsuarioSerializer()
+    owner = UsuarioSerializer(required=False)
 
 class CompartidoSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False)
@@ -31,3 +31,4 @@ class MedidaSerializer(serializers.Serializer):
     fecha = serializers.DateTimeField()
     intensidad = serializers.FloatField()
     voltaje = serializers.FloatField()
+    kw = serializers.FloatField(required=False)

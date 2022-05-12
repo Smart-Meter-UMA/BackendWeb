@@ -25,6 +25,7 @@ class Medida(models.Model):
     fecha = models.DateTimeField()
     intensidad = models.FloatField()
     voltaje = models.FloatField()
+    kw = models.FloatField()
 
 
 #class Medicion(models.Model):

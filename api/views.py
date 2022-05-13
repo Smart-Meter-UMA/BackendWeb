@@ -1,35 +1,14 @@
-from urllib import response
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
-from api.dto import DispositivoDTO, HogarDTO, MedidaDTO, UsuarioDTO
-from api.models import Dispositivo, Hogar, Medida, Usuario
-from api.serializers import DispositivoSerializer, HogarSerializer, MedidaSerializer, UsuarioSerializer
-from google.oauth2 import id_token
-from google.auth import transport
-from datetime import date
+from api.dto import CompartidoDTO, DispositivoDTO, HogarDTO, InvitacionDTO, MedidaDTO, UsuarioDTO
+from api.models import Compartido, Hogar, Dispositivo, Invitacion, Medida, Usuario
+from api.serializers import CompartidoSerializer, DispositivoSerializer, HogarSerializer, InvitacionSerializer, MedidaSerializer, UsuarioSerializer
+from datetime import datetime, timedelta
 
-CLIENT_ID = "860266555787-337c130jdi6jar97gkmomb1dq71sv02i.apps.googleusercontent.com"
+def calcularPotencia(voltaje, intensidad):
+    return voltaje * intensidad
 
-def autorizar(request):
-    if request.headers.get('Authorization') is not None:
-            
-        token = request.headers.get('Authorization')
-        idinfo = None
-        try:
-            idinfo = id_token.verify_oauth2_token(token, transport.requests.Request(), CLIENT_ID)
-        except:
-            return None
-
-        email = idinfo['email']
-
-        try:
-            usuario = Usuario.objects.get(email=email)
-            return usuario
-        except:
-            return None
-    else :
-        return None
 
 # Create your views here.
 
@@ -113,6 +92,18 @@ class UsuariosIDHogaresView(APIView):
         serializer = HogarSerializer(hogarsDTO,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK,headers={"X-TOTAL-COUNT":hogars.count()})
 
+#/usuarios/:id/invitacions
+class UsuariosIDInvitacionsView(APIView):
+    def get(self,request,id,format=None):
+        try:
+            invitacions = Invitacion.objects.filter(invitado__id=id)
+        except:
+            return Response({"mensaje":"Error: No se ha encontrado las invitaciones del invitado con ese ID"},status=status.HTTP_404_NOT_FOUND)
+
+        invitacionsDTO = InvitacionDTO.toInvitacionDTO(invitacions)
+        serializer = InvitacionSerializer(invitacionsDTO,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK,headers={"X-TOTAL-COUNT":invitacions.count()})
+
 
 
 #/hogars
@@ -187,13 +178,25 @@ class HogarIDView(APIView):
 class HogarsIDispositivosView(APIView):
     def get(self,request,id,format=None):
         try:
-            dispositivos = Dispositivo.objects.get(hogar__id=id)
+            dispositivos = Dispositivo.objects.filter(hogar__id=id)
         except:
             return Response({"mensaje":"Error: No se ha encontrado los dispisitivos de esa hogar con ese ID"},status=status.HTTP_404_NOT_FOUND)
 
         dipositivosDTO = DispositivoDTO.toDispositivoDTO(dispositivos)
         serializer = DispositivoSerializer(dipositivosDTO,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK,headers={"X-TOTAL-COUNT":dispositivos.count()})
+
+#/hogars/:id/compartidos
+class HogarsIDCompartidosView(APIView):
+    def get(self,request,id,format=None):
+        try:
+            compartidos = Compartido.objects.filter(hogarCompartido__id=id)
+        except:
+            return Response({"mensaje":"Error: No se ha encontrado los dispisitivos de esa hogar con ese ID"},status=status.HTTP_404_NOT_FOUND)
+
+        compartidoDTO = CompartidoDTO.toCompartidoDTO(compartidos)
+        serializer = CompartidoSerializer(compartidoDTO,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK,headers={"X-TOTAL-COUNT":compartidos.count()})
 
 
 #/dispositivos
@@ -290,8 +293,70 @@ class MedidaView(APIView):
 
         return Response(serializer.data,status=status.HTTP_200_OK,headers={"X-TOTAL-COUNT":medidas.count()})
 
-    
+    def post(self,request,format=None):
+        #Falta por ver que me envia
+        serializer = MedidaSerializer(data=request.data)
+        if serializer.is_valid():
+            kw = calcularPotencia(intensidad=serializer.validated_data.get("intensidad"),voltaje=serializer.validated_data.get("voltaje"))
+            medida = Medida(
+                #dispositivo
+                fecha = datetime.now(),
+                intensidad = serializer.validated_data.get("intensidad"),
+                voltaje = serializer.validated_data.get("voltaje"),
+                kw = kw
+            )
+            try:
+                medida.save()
+                #guardarEstadistica(idDispositivo,kw,datetime.now())
+                return Response(status=status.HTTP_201_CREATED)
+            except:
+                return Response({"mensaje":"Error: La medida no ha podido ser creado."},status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"mensaje":"Error: El formato de la medida es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
 
+
+#invitacions/:id
+class InvitacionsIDView(APIView):
+    def delete(self,request,id,format=None):
+        try:
+            invitacion = Invitacion.objects.get(id=id)
+        except:
+            return Response({"mensaje":"Error: No se ha encontrado una invitacion con ese ID"},status=status.HTTP_404_NOT_FOUND)
+        try:
+            invitacion.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except:
+            return Response({"mensaje":"Error: No se ha podido eliminar un dispositivo con ese ID"},status=status.HTTP_400_BAD_REQUEST)
+
+#/compartidos
+class CompartidoView(APIView):
+    def post(self,request,format=None):
+        serializer = CompartidoSerializer(data=request.data)
+        if serializer.is_valid():
+            compartido = Compartido(
+                compartido = Usuario.objects.get(id=serializer.validated_data.pop("compartido").get("id")),
+                hogarCompartido = Hogar.objects.get(id=serializer.validated_data.pop("hogarCompartido").get("id"))                
+            )
+            try:
+                compartido.save()
+                return Response(status=status.HTTP_201_CREATED)
+            except:
+                return Response({"mensaje":"Error: El dispositivo no ha podido ser creado."},status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"mensaje":"Error: El formato del dispositivo es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
+
+#/compartidos/:id
+class CompartidosIDView(APIView):
+    def delete(self,request,id,format=None):
+        try:
+            compartido = Compartido.objects.get(id=id)
+        except:
+            return Response({"mensaje":"Error: No se ha encontrado una comparticion con ese ID"},status=status.HTTP_404_NOT_FOUND)
+        try:
+            compartido.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except:
+            return Response({"mensaje":"Error: No se ha podido eliminar ese compartido con ese ID"},status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -304,6 +369,7 @@ class LoginView(APIView):
         try:
             usuario = Usuario.objects.get(email=email)
         except:
+            print("Creo un usuario")
             usuario = Usuario(
                 nombre = request.data.get('nombre'),
                 apellidos = "",

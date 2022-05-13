@@ -1,7 +1,5 @@
 from rest_framework import serializers
 
-from api.models import Usuario
-
 class UsuarioSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False)
     email = serializers.EmailField()
@@ -12,23 +10,30 @@ class UsuarioSerializer(serializers.Serializer):
 class HogarSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False)
     nombre = serializers.CharField(max_length=20)
+    potencia_contratada = serializers.IntegerField()
     owner = UsuarioSerializer(required=False)
 
 class CompartidoSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False)
-    invitado = UsuarioSerializer()
-    hogarInvitado = HogarSerializer()
+    compartido = UsuarioSerializer()
+    hogarCompartido = HogarSerializer()
 
 class DispositivoSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False)
     nombre = serializers.CharField(max_length=20)
-    potencia_contratada = serializers.IntegerField()
-    hogar = HogarSerializer()
+    limite_minimo = serializers.IntegerField()
+    limite_maximo = serializers.IntegerField()
+    hogar = HogarSerializer(required=False)
 
 class MedidaSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False)
-    dispositivo = DispositivoSerializer()
-    fecha = serializers.DateTimeField()
-    intensidad = serializers.FloatField()
-    voltaje = serializers.FloatField()
-    kw = serializers.FloatField(required=False)
+    dispositivo = DispositivoSerializer(required=False)
+    fecha = serializers.DateTimeField(required=False)
+    intensidad = serializers.FloatField(required=False)
+    voltaje = serializers.FloatField(required=False)
+
+class InvitacionSerializer(serializers.Serializer):
+    id = serializers.IntegerField(required=False)
+    invitado = UsuarioSerializer()
+    hogarInvitado = HogarSerializer()
+    invitante = UsuarioSerializer()

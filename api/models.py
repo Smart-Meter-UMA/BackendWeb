@@ -6,18 +6,26 @@ class Usuario(models.Model):
     username = models.CharField(max_length=30)
     nombre = models.CharField(max_length=30)
     apellidos = models.CharField(max_length=30)
-
+    
 class Hogar(models.Model):
     nombre = models.CharField(max_length=20)
+    potencia_contratada = models.IntegerField()
     owner = models.ForeignKey(Usuario, related_name="owner", on_delete=models.CASCADE)
 
 class Compartido(models.Model):
-    invitado = models.ForeignKey(Usuario, related_name='Invitado', on_delete=models.CASCADE)
-    hogarInvitado = models.ForeignKey(Hogar, related_name='HogarInvitado', on_delete=models.CASCADE)
+    compartido = models.ForeignKey(Usuario, related_name='compartido', on_delete=models.CASCADE)
+    hogarCompartido = models.ForeignKey(Hogar, related_name='hogarCompartido', on_delete=models.CASCADE)
+
+class Invitacion(models.Model):
+    invitado = models.ForeignKey(Usuario, related_name='invitado', on_delete=models.CASCADE)
+    hogarInvitado = models.ForeignKey(Hogar, related_name='hogarInvitado', on_delete=models.CASCADE)
+    invitante = models.ForeignKey(Usuario, related_name='invitante', on_delete=models.CASCADE)
 
 class Dispositivo(models.Model):
     nombre = models.CharField(max_length=20)
-    potencia_contratada = models.IntegerField()
+    limite_minimo = models.IntegerField()
+    limite_maximo = models.IntegerField()
+    tiempo_medida = models.IntegerField()
     hogar = models.ForeignKey(Hogar, related_name='Hogar', on_delete=models.CASCADE)
 
 class Medida(models.Model):

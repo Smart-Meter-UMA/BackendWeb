@@ -23,7 +23,6 @@ class DispositivoSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=20)
     limite_minimo = serializers.IntegerField()
     limite_maximo = serializers.IntegerField()
-    hogar = HogarSerializer(required=False)
 
 class MedidaSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False)

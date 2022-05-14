@@ -122,6 +122,7 @@ class HogarView(APIView):
         if serializer.is_valid():
             hogar = Hogar(
                 nombre = serializer.validated_data.get("nombre"),
+                potencia_contratada = serializer.validated_data.get("potencia"),
                 owner = Usuario.objects.get(id=serializer.validated_data.pop("owner").get("id"))
             )
             try:

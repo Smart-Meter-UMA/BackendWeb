@@ -127,7 +127,10 @@ class HogarView(APIView):
             )
             try:
                 hogar.save()
-                return Response(status=status.HTTP_201_CREATED)
+                hogarDto = HogarDTO(hogar)
+                serializer = HogarSerializer(hogarDto)
+                print(serializer.data)
+                return Response(data=serializer.data,status=status.HTTP_201_CREATED)
             except:
                 return Response({"mensaje":"Error: El hogar no ha podido ser creado."},status=status.HTTP_400_BAD_REQUEST)
         else:

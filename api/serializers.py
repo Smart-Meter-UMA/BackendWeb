@@ -10,7 +10,7 @@ class UsuarioSerializer(serializers.Serializer):
 class HogarSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False)
     nombre = serializers.CharField(max_length=20)
-    potencia_contratada = serializers.IntegerField(required=False)
+    potencia_contratada = serializers.IntegerField()
     owner = UsuarioSerializer(required=False)
 
 class CompartidoSerializer(serializers.Serializer):

@@ -129,7 +129,6 @@ class HogarView(APIView):
                 hogar.save()
                 hogarDto = HogarDTO(hogar)
                 serializer = HogarSerializer(hogarDto)
-                print(serializer.data)
                 return Response(data=serializer.data,status=status.HTTP_201_CREATED)
             except:
                 return Response({"mensaje":"Error: El hogar no ha podido ser creado."},status=status.HTTP_400_BAD_REQUEST)
@@ -159,6 +158,7 @@ class HogarIDView(APIView):
         serializer = HogarSerializer(data=request.data)
         if serializer.is_valid():
             hogar.nombre = serializer.validated_data.get("nombre")
+            hogar.potencia_contratada = serializer.validated_data.get("potencia_contratada")
             try:
                 hogar.save()
                 return Response(status=status.HTTP_204_NO_CONTENT)
@@ -373,7 +373,6 @@ class LoginView(APIView):
         try:
             usuario = Usuario.objects.get(email=email)
         except:
-            print("Creo un usuario")
             usuario = Usuario(
                 nombre = request.data.get('nombre'),
                 apellidos = "",

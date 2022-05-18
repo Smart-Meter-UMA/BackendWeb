@@ -35,6 +35,25 @@ class Medida(models.Model):
     voltaje = models.FloatField()
     kw = models.FloatField()
 
+class Estadistica(models.Model):
+    dispositivo = models.ForeignKey(Dispositivo, related_name="dispositivo_estadisitica_diaria", on_delete=models.CASCADE)
+    
+    fechaDia = models.DateTimeField()
+    sumaDiaKW = models.FloatField()
+    
+    fechaMes = models.DateTimeField()
+    sumaMesKW = models.FloatField()
+
+    sumaTotalKW = models.FloatField()
+    numDiasTotal = models.IntegerField()
+    numMesTotal = models.IntegerField()
+
+    minDiaKw = models.FloatField()
+    maxDiaKw = models.FloatField()
+
+    minMesKw = models.FloatField()
+    maxMesKw = models.FloatField()
+
 
 #class Medicion(models.Model):
 #    Tipo = (

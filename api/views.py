@@ -2,13 +2,55 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
 from api.dto import CompartidoDTO, DispositivoDTO, HogarDTO, InvitacionDTO, MedidaDTO, UsuarioDTO
-from api.models import Compartido, Hogar, Dispositivo, Invitacion, Medida, Usuario
+from api.models import Compartido, Estadistica, Hogar, Dispositivo, Invitacion, Medida, Usuario
 from api.serializers import CompartidoSerializer, DispositivoSerializer, HogarSerializer, InvitacionSerializer, MedidaSerializer, UsuarioSerializer
-from datetime import datetime, timedelta
+from datetime import datetime
 
 def calcularPotencia(voltaje, intensidad):
     return voltaje * intensidad
 
+def obtenerNumDia(mes,anio):
+    if (mes == 1 or mes == 3 or mes == 5 or mes == 7 or mes == 8 or mes == 10 or mes == 12): 
+        return 31
+    
+    if (mes == 4 or mes == 6 or mes == 9 or mes == 11):
+        return 30
+    
+    if (mes == 2 and ((anio % 4 == 0) and ((anio % 100 != 0) or (anio % 400 == 0)))):
+        return 29
+    
+    if (mes == 2 and not((anio % 4 == 0) and ((anio % 100 != 0) or (anio % 400 == 0)))):
+        return 28
+    
+    return None
+
+def guardarEstadistica(idDispositivo, kw):
+
+    estadistica = Estadistica.objects.get(dispositivo__id=idDispositivo)
+
+    estadistica.sumaTotalKW = estadistica.sumaTotalKW + kw
+
+    ##Tema de las fechas
+    ahora = datetime.now()
+
+    hoyUltHora = datetime(year=estadistica.fechaDia.year,month=estadistica.fechaDia.month,day=estadistica.fechaDia.day,hour=23,minute=59,second=59)
+    ultDiaMes = datetime(year=estadistica.fechaMes.year,month=estadistica.fechaMes.month,day=obtenerNumDia(estadistica.fechaMes.month,estadistica.fechaMes.year),hour=23,minute=59,second=59)
+    
+    if ahora > hoyUltHora:
+        estadistica.sumaDiaKW = estadistica.sumaDiaKW + kw
+    else:
+        estadistica.fechaDia = datetime(year=ahora.year,month=ahora.month,day=ahora.day)
+        estadistica.numDiasTotal = estadistica.numDiasTotal + 1
+        if estadistica.minDiaKw > estadistica.sumaDiaKW:
+            estadistica.minDiaKw = estadistica.sumaDiaKW
+        if estadistica.maxDiaKw < estadistica.sumaDiaKW:
+            estadistica.maxDiaKw = estadistica.sumaDiaKW
+        estadistica.sumaDiaKW = kw
+
+    if ahora > ultDiaMes:
+        estadistica.sumaMesKW = estadistica.sumaMesKW + kw
+    else:
+        estadistica.sumaMesKW = kw
 
 # Create your views here.
 
@@ -220,11 +262,29 @@ class DispositivosView(APIView):
         if serializer.is_valid():
             dispositivo = Dispositivo(
                 nombre = serializer.validated_data.get("nombre"),
-                potencia_contratada = serializer.validated_data.get("potencia_contratada"),
+                limite_minimo = 0,
+                limite_maximo = 0,
+                tiempo_medida = 15,
                 hogar = Hogar.objects.get(id=serializer.validated_data.pop("hogar").get("id"))
             )
             try:
                 dispositivo.save()
+                ahora = datetime.now()
+                estadistica = Estadistica(
+                    dispositivo = dispositivo,
+                    fechaDia = datetime(year=ahora.year,month=ahora.month,day=ahora.day),
+                    sumaDiaKW = 0,
+                    fechaMes = datetime(year=ahora.year,month=ahora.month,day=1),
+                    sumaMesKW = 0,
+                    sumaTotalKW = 0,
+                    numDiasTotal = 1,
+                    numMesTotal = 1,
+                    minDiaKw = 0,
+                    maxDiaKw = 0,
+                    minMesKw = 0,
+                    maxMesKw = 0
+                )
+                estadistica.save()
                 return Response(status=status.HTTP_201_CREATED)
             except:
                 return Response({"mensaje":"Error: El dispositivo no ha podido ser creado."},status=status.HTTP_400_BAD_REQUEST)
@@ -284,6 +344,20 @@ class DispositivoIDMedidadView(APIView):
         medidasDTO = MedidaDTO.toMedidaDTO(medidas)
         serializer = MedidaSerializer(medidasDTO,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK,headers={"X-TOTAL-COUNT":medidas.count()})
+
+#/dispositivos/:id/estadisticas
+class DispositivoIDEstadisticasView(APIView):
+    def get(self,request,id,format=None):
+        try:
+            estadistica = Estadistica.objects.get(dispositivo__id=id)
+        except:
+            return Response({"mensaje":"Error: No se ha encontrado las medidas de ese dispositivo con ese ID"},status=status.HTTP_404_NOT_FOUND)
+
+        mediaDiaria = (estadistica.sumaTotalKW/estadistica.numDiasTotal)
+        mediaMensual = (estadistica.sumaTotalKW/estadistica.numMesTotal)
+        return Response({"consumidoHoy":estadistica.sumaDiaKW,"consumidoMes":estadistica.sumaMesKW,
+        "mediaDiaria":mediaDiaria,"mediaMensual":mediaMensual,"minDiaKw":estadistica.minDiaKw,
+        "maxDiaKw":estadistica.maxDiaKw,"minMesKw":estadistica.minMesKw,"maxMesKw":estadistica.maxMesKw},status=status.HTTP_200_OK)
 
 
 #/medidas

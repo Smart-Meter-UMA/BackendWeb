@@ -1,6 +1,6 @@
 from django.urls import path
 
-from api.views import CompartidoView, CompartidosIDView, DispositivoIDMedidadView, DispositivoIDView, DispositivosView, HogarIDView, HogarView, HogarsIDCompartidosView, HogarsIDispositivosView, InvitacionsIDView, LoginView, UsuarioView, UsuarioIDView, UsuariosIDHogaresView, UsuariosIDInvitacionsView
+from api.views import CompartidoView, CompartidosIDView, DispositivoIDEstadisticasView, DispositivoIDMedidadView, DispositivoIDView, DispositivosView, HogarIDView, HogarView, HogarsIDCompartidosView, HogarsIDispositivosView, InvitacionsIDView, LoginView, UsuarioView, UsuarioIDView, UsuariosIDHogaresView, UsuariosIDInvitacionsView
 
 urlpatterns = [
     path('login/', LoginView.as_view()),
@@ -18,6 +18,7 @@ urlpatterns = [
     path('dispositivos/', DispositivosView.as_view()),
     path('dispositivos/<int:id>', DispositivoIDView.as_view()),
     path('dispositivos/<int:id>/medidas', DispositivoIDMedidadView.as_view()),
+    path('dispositivos/<int:id>/estadisticas', DispositivoIDEstadisticasView.as_view()),
 
     path('invitacions/<int:id>', InvitacionsIDView.as_view()),
     path('compartidos/', CompartidoView.as_view()),

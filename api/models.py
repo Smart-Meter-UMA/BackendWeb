@@ -3,7 +3,6 @@ from django.db import models
 # Create your models here.
 class Usuario(models.Model):
     email = models.EmailField()
-    username = models.CharField(max_length=30)
     nombre = models.CharField(max_length=30)
     apellidos = models.CharField(max_length=30)
     
@@ -23,9 +22,12 @@ class Invitacion(models.Model):
 
 class Dispositivo(models.Model):
     nombre = models.CharField(max_length=20)
-    limite_minimo = models.IntegerField()
-    limite_maximo = models.IntegerField()
+    notificacion = models.BooleanField()
+    general = models.BooleanField()
+    limite_minimo = models.FloatField()
+    limite_maximo = models.FloatField()
     tiempo_medida = models.IntegerField()
+    tiempo_refrescado = models.IntegerField()
     hogar = models.ForeignKey(Hogar, related_name='Hogar', on_delete=models.CASCADE)
 
 class Medida(models.Model):
@@ -39,27 +41,23 @@ class Estadistica(models.Model):
     dispositivo = models.ForeignKey(Dispositivo, related_name="dispositivo_estadisitica_diaria", on_delete=models.CASCADE)
     
     fechaDia = models.DateTimeField()
-    sumaDiaKW = models.FloatField()
+    sumaDiaKwh = models.FloatField()
     
     fechaMes = models.DateTimeField()
-    sumaMesKW = models.FloatField()
+    sumaMesKwh = models.FloatField()
 
-    sumaTotalKW = models.FloatField()
+    sumaTotalKwh = models.FloatField()
     numDiasTotal = models.IntegerField()
     numMesTotal = models.IntegerField()
 
-    minDiaKw = models.FloatField()
-    maxDiaKw = models.FloatField()
+    minDiaKwh = models.FloatField()
+    fechaMinDiaKwh = models.DateField()
+    maxDiaKwh = models.FloatField()
+    fechaMaxDiaKwh = models.DateField()
 
-    minMesKw = models.FloatField()
-    maxMesKw = models.FloatField()
+    minMesKwh = models.FloatField()
+    fechaMinMesKwh = models.DateField()
+    maxMesKwh = models.FloatField()
+    fechaMaxMesKwh = models.DateField()
 
-
-#class Medicion(models.Model):
-#    Tipo = (
-#        ('V', 'Voltaje'),
-#        ('I', 'Intensidad')
-#    )
-#    tipo = models.CharField(max_length=1, choices=Tipo)
-#    valor = models.FloatField()
 

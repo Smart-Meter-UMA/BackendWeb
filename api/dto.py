@@ -1,34 +1,31 @@
-
-
 from api.models import Usuario
 
 
-class UsuarioDTO():
+class UsuarioObtenerDTO():
     def __init__(self, usuario):
         self.id = usuario.id
         self.email = usuario.email
-        self.username = usuario.username
         self.nombre = usuario.nombre
         self.apellidos = usuario.apellidos
     
     @staticmethod
-    def toUsuariosDTO(usuarios):
+    def toUsuarioObtenerDTO(usuarios):
         lista = []
         for u in usuarios:
-            lista.append(UsuarioDTO(u))
+            lista.append(UsuarioObtenerDTO(u))
         return lista
 
-class HogarDTO():
+class HogarObtenerDTO():
     def __init__(self, hogar):
         self.id = hogar.id
         self.potencia_contratada = hogar.potencia_contratada
         self.nombre = hogar.nombre
     
     @staticmethod
-    def toHogarsDTO(hogars):
+    def toHogarObtenerDTO(hogars):
         lista = []
         for h in hogars:
-            lista.append(HogarDTO(h))
+            lista.append(HogarObtenerDTO(h))
         return lista
 
 
@@ -49,9 +46,9 @@ class DispositivoDTO():
 class InvitacionDTO():
     def __init__(self, invitacion):
         self.id = invitacion.id
-        self.invitante = UsuarioDTO(invitacion.invitante)
-        self.hogarInvitado = HogarDTO(invitacion.hogarInvitado)
-        self.invitado = UsuarioDTO(invitacion.invitado)
+        self.invitante = UsuarioObtenerDTO(invitacion.invitante)
+        self.hogarInvitado = HogarObtenerDTO(invitacion.hogarInvitado)
+        self.invitado = UsuarioObtenerDTO(invitacion.invitado)
     
     @staticmethod
     def toInvitacionDTO(invitacions):
@@ -63,8 +60,8 @@ class InvitacionDTO():
 class CompartidoDTO():
     def __init__(self, compartido):
         self.id = compartido.id
-        self.compartido = UsuarioDTO(compartido.compartido)
-        self.hogarCompartido = HogarDTO(compartido.hogarCompartido)
+        self.compartido = UsuarioObtenerDTO(compartido.compartido)
+        self.hogarCompartido = HogarObtenerDTO(compartido.hogarCompartido)
     
     @staticmethod
     def toCompartidoDTO(compartidos):
@@ -88,3 +85,10 @@ class MedidaDTO():
         for m in medidas:
             lista.append(MedidaDTO(m))
         return lista
+
+class HogarObtenerByIdDTO():
+    def __init__(self, hogar, dispositivos):
+        self.id = hogar.id
+        self.potencia_contratada = hogar.potencia_contratada
+        self.nombre = hogar.nombre
+        self.dispositivos = toDispositivosDTO(dispositivos)

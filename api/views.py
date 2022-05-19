@@ -5,6 +5,30 @@ from api.dto import CompartidoDTO, DispositivoDTO, HogarDTO, InvitacionDTO, Medi
 from api.models import Compartido, Estadistica, Hogar, Dispositivo, Invitacion, Medida, Usuario
 from api.serializers import CompartidoSerializer, DispositivoSerializer, HogarSerializer, InvitacionSerializer, MedidaSerializer, UsuarioSerializer
 from datetime import datetime
+from google.oauth2 import id_token
+from google.auth import transport
+
+CLIENT_ID = "724046535439-h28ieq17aff119i367el50skelqkdgh4.apps.googleusercontent.com"
+
+def autorizar_usuario(request):
+    if request.headers.get('Authorization_User') is not None:
+            
+        token = request.headers.get('Authorization_User')
+        idinfo = None
+        try:
+            idinfo = id_token.verify_oauth2_token(token, transport.requests.Request(), CLIENT_ID)
+        except:
+            return None
+
+        email = idinfo['email']
+
+        try:
+            usuario = Usuario.objects.get(email=email)
+            return usuario
+        except:
+            return None
+    else :
+        return None
 
 def calcularPotencia(voltaje, intensidad):
     return voltaje * intensidad
@@ -57,6 +81,10 @@ def guardarEstadistica(idDispositivo, kw):
 # /usuarios
 class UsuarioView(APIView):
     def get(self,request,format=None):
+        usuario = autorizar_usuario(request)
+        if usuario == None:
+            return Response({"mensage":"Usuario no autorizado"},status=status.HTTP_401_UNAUTHORIZED)
+        
         usuarios = Usuario.objects.all()
 
         usuariosDTO = UsuarioDTO.toUsuariosDTO(usuarios)
@@ -65,35 +93,8 @@ class UsuarioView(APIView):
 
         return Response(serializer.data,status=status.HTTP_200_OK,headers={"X-TOTAL-COUNT":usuarios.count()})
 
-    def post(self,request,format=None):
-        serializer = UsuarioSerializer(data=request.data)
-        if serializer.is_valid():
-            usuario = Usuario(
-                nombre = serializer.validated_data.get("nombre"),
-                apellidos = serializer.validated_data.get("apellidos"),
-                username = serializer.validated_data.get("username"),
-                email = serializer.validated_data.get("email")
-            )
-            try:
-                usuario.save()
-                return Response(status=status.HTTP_201_CREATED)
-            except:
-                return Response({"mensaje":"Error: El usuario no ha podido ser crear."},status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response({"mensaje":"Error: El formato del usuario es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
-
 #/usuarios/:id
 class UsuarioIDView(APIView):
-    def get(self,request,id,format=None):
-        try:
-            usuario = Usuario.objects.get(id=id)
-        except:
-            return Response({"mensaje":"Error: No se ha encontrado un usuario con ese ID"},status=status.HTTP_404_NOT_FOUND)
-
-        usuarioDTO = UsuarioDTO(usuario)
-        serializer = UsuarioSerializer(usuarioDTO)
-        return Response(serializer.data,status=status.HTTP_200_OK)
-
     def put(self,request,id,format=None):
         try:
             usuario = Usuario.objects.get(id=id)
@@ -392,6 +393,28 @@ class MedidaView(APIView):
         else:
             return Response({"mensaje":"Error: El formato de la medida es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
 
+#invitacions/
+class InvitacionsView(APIView):
+    def post(self,request, format=None):
+        serializer = InvitacionSerializer(data=request.data)
+        if serializer.is_valid():
+            invitacion = Invitacion(
+                args=None
+            )
+            try:
+                invitacion.save()
+
+            except:
+                return Response({"mensaje":"Error: La invitación no ha podido ser creada"},status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"mensaje":"Error: El formato de la invitación es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
+
+
+        #     hogar = Hogar(
+        #         nombre = serializer.validated_data.get("nombre"),
+        #         potencia_contratada = serializer.validated_data.get("potencia_contratada"),
+        #         owner = Usuario.objects.get(id=serializer.validated_data.pop("owner").get("id"))
+        #     )
 
 #invitacions/:id
 class InvitacionsIDView(APIView):

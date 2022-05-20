@@ -1,4 +1,4 @@
-from api.models import Usuario
+from datetime import datetime
 
 
 class UsuarioObtenerDTO():
@@ -16,16 +16,19 @@ class UsuarioObtenerDTO():
         return lista
 
 class HogarObtenerDTO():
-    def __init__(self, hogar):
+    def __init__(self, hogar, compartido):
         self.id = hogar.id
         self.potencia_contratada = hogar.potencia_contratada
         self.nombre = hogar.nombre
+        self.compartido = compartido
     
     @staticmethod
-    def toHogarObtenerDTO(hogars):
+    def toHogarObtenerDTO(hogars,compartidos):
         lista = []
         for h in hogars:
-            lista.append(HogarObtenerDTO(h))
+            lista.append(HogarObtenerDTO(h,False))
+        for c in compartidos:
+            lista.append(HogarObtenerDTO(c,True))
         return lista
 
 
@@ -33,8 +36,6 @@ class DispositivoDTO():
     def __init__(self, hogar):
         self.id = hogar.id
         self.nombre = hogar.nombre
-        self.limite_minimo = hogar.limite_minimo
-        self.limite_maximo = hogar.limite_maximo
     
     @staticmethod
     def toDispositivoDTO(dispositivos):
@@ -42,6 +43,37 @@ class DispositivoDTO():
         for d in dispositivos:
             lista.append(DispositivoDTO(d))
         return lista
+
+
+def enHoras(time):
+    time / 3600
+
+class EstadisticaDTO():
+    def __init__(self,estadistica):
+        #TODO: Hacer las estadistica
+        self.minKWHDiario = estadistica.minDiaKwh
+        self.diaMinKWHGastado = estadistica.fechaMinDiaKwh
+        self.maxKWHDiario = estadistica.maxDiaKwh
+        self.diaMaxKWHGastado = estadistica.fechaMaxDiaKwh
+        self.minKWHMensual = estadistica.minMesKwh
+        self.mesMinKWHGastado = estadistica.fechaMinMesKwh
+        self.maxKWHMensual = estadistica.maxMesKwh
+        self.mesMaxKWHGastado = estadistica.fechaMaxMesKwh
+
+        ahora = datetime.now()
+        timePasadoEnElDia = enHoras(ahora - self.fechaDia)
+        timePasadoEnElMes = enHoras(ahora - self.fechaMes)
+        
+        self.mediaKWHDiaria = estadistica.sumaDiaKwh / timePasadoEnElDia
+        self.mediaKWHMensual = estadistica.sumaMesKwh / timePasadoEnElMes
+        
+        pass
+
+class DispositivoObtenerByIdDTO():
+    def __init__(self, hogar, estadistica):
+        self.id = hogar.id
+        self.nombre = hogar.nombre
+        self.estadistica = EstadisticaDTO(estadistica)
 
 class InvitacionDTO():
     def __init__(self, invitacion):
@@ -57,17 +89,16 @@ class InvitacionDTO():
             lista.append(InvitacionDTO(i))
         return lista
 
-class CompartidoDTO():
+class CompartidoObtencionDTO():
     def __init__(self, compartido):
         self.id = compartido.id
         self.compartido = UsuarioObtenerDTO(compartido.compartido)
-        self.hogarCompartido = HogarObtenerDTO(compartido.hogarCompartido)
     
     @staticmethod
-    def toCompartidoDTO(compartidos):
+    def toCompartidoObtencionDTO(compartidos):
         lista = []
         for c in compartidos:
-            lista.append(CompartidoDTO(c))
+            lista.append(CompartidoObtencionDTO(c))
         return lista
 
 
@@ -86,9 +117,36 @@ class MedidaDTO():
             lista.append(MedidaDTO(m))
         return lista
 
+class MedidaObtenerDTO():
+    def __init__(self, medida):
+        self.id = medida.id
+        self.fecha = medida.fecha
+        self.kw = medida.kw
+       
+    @staticmethod
+    def toMedidaObtenerDTO(medidas):
+        lista = []
+        for m in medidas:
+            lista.append(MedidaObtenerDTO(m))
+        return lista
+
 class HogarObtenerByIdDTO():
-    def __init__(self, hogar, dispositivos):
+    def __init__(self, hogar, dispositivos, editable):
         self.id = hogar.id
         self.potencia_contratada = hogar.potencia_contratada
         self.nombre = hogar.nombre
-        self.dispositivos = toDispositivosDTO(dispositivos)
+        self.dispositivos = DispositivoDTO.toDispositivoDTO(dispositivos)
+        self.editable = editable
+
+class InvtiacionsRecibidasDTO():
+    def __init__(self, invitacions):
+        self.id = invitacions.id
+        self.ofertante = invitacions.invitante
+        self.hogarInvitado = invitacions.hogarInvitado
+
+    @staticmethod
+    def toInvtiacionsRecibidasDTO(invitacions):
+        lista = []
+        for i in invitacions:
+            lista.append(InvtiacionsRecibidasDTO(i))
+        return lista

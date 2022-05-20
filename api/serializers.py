@@ -1,7 +1,5 @@
 from rest_framework import serializers
 
-from api.models import Estadistica
-
 class UsuarioObtenerSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     email = serializers.EmailField()
@@ -20,11 +18,6 @@ class HogarObtenerSerializer(serializers.Serializer):
 class HogarCrearSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=20)
     potencia_contratada = serializers.IntegerField()
-
-class CompartidoSerializer(serializers.Serializer):
-    id = serializers.IntegerField(required=False)
-    compartido = UsuarioObtenerSerializer()
-    hogarCompartido = HogarObtenerSerializer()
 
 class DispositivoCrearSerializer(serializers.Serializer):
     nombre = serializers.CharField()
@@ -51,6 +44,10 @@ class DispositivoActualizarSerializer(serializers.Serializer):
     nombre = serializers.CharField()
     notificacion = serializers.BooleanField()
     limiteMaximo = serializers.IntegerField()
+    general = serializers.BooleanField()
+    limite_minimo = serializers.FloatField()
+    tiempo_medida = serializers.IntegerField()
+    tiempo_refrescado = serializers.IntegerField()
 
 class DispositivoHogarSerializer(serializers.Serializer):
     id = serializers.IntegerField()
@@ -83,7 +80,7 @@ class InvitacionEnviadasSerializer(serializers.Serializer):
 
 class InvitacionRecibidasSerializer(serializers.Serializer):
     id = serializers.IntegerField()
-    oferta = UsuarioObtenerSerializer()
+    ofertante = UsuarioObtenerSerializer()
     hogarInvitado = HogarObtenerSerializer()
 
 class HogarObtenerByIdSerializer(serializers.Serializer):
@@ -91,3 +88,10 @@ class HogarObtenerByIdSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=20)
     potencia_contratada = serializers.IntegerField()
     dispositivos = DispositivoModificarSerializer(many=True)
+    editable = serializers.BooleanField()
+
+class CompartidoCrearSerializer(serializers.Serializer):
+    hogarCompartido = HogarObtenerSerializer()
+
+class CompartidoObtencionSerializer(serializers.Serializer):
+    compartido = UsuarioObtenerSerializer()

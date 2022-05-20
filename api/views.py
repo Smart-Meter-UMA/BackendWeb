@@ -143,6 +143,7 @@ class UsuarioView(APIView):
 
         return Response(serializer.data,status=status.HTTP_200_OK,headers={"X-TOTAL-COUNT":usuarios.count()})
     
+class UsuarioIDView(APIView): 
     def put(self,request,id,format=None):
         usuarioToken = autorizar_usuario(request,False)
         if usuarioToken == None:

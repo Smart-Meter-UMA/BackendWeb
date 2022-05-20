@@ -1,11 +1,12 @@
 from django.urls import path
 
-from api.views import DispositivoIDView, DispositivosView, HogarIDView, HogarView, HogarsIDCompartidosView, InvitacionsIDView, InvitacionsRecibidasView, LoginView, MedidaView, OfrecerInvitacionView, UsuarioView
+from api.views import DispositivoIDView, DispositivosView, HogarIDView, HogarView, HogarsIDCompartidosView, InvitacionsIDView, InvitacionsRecibidasView, LoginView, MedidaView, OfrecerInvitacionView, UsuarioIDView, UsuarioView
 
 
 urlpatterns = [
     path("login/", LoginView.as_view()),
     path("usuarios/", UsuarioView.as_view()),
+    path("usuarios/<int:id>", UsuarioIDView.as_view()),
     path("hogars/", HogarView.as_view()),
     path("hogars/<int:id>", HogarIDView.as_view()),
     path("hogars/<int:id>/compartidos", HogarsIDCompartidosView.as_view()),

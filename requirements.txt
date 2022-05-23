@@ -6,3 +6,4 @@ dnspython==2.1.0
 django-cors-headers==3.10.0
 requests==2.26.0
 google-auth==2.3.3
+jwt

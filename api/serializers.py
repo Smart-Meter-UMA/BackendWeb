@@ -73,6 +73,11 @@ class MedidaCrearSerializer(serializers.Serializer):
     voltaje = serializers.FloatField(required=False)
     desfase = serializers.FloatField(required=False)
 
+class InvitacionCrearSerializer(serializers.Serializer):
+    id = serializers.IntegerField(required=False)
+    correoInvitado = serializers.EmailField()
+    hogarInvitado = HogarObtenerSerializer()
+
 class InvitacionEnviadasSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False)
     invitado = UsuarioObtenerSerializer()

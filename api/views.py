@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from api.dto import CompartidoObtencionDTO, DispositivoObtenerByIdDTO, HogarObtenerByIdDTO, HogarObtenerDTO, InvitacionDTO, InvtiacionsRecibidasDTO, MedidaDTO, MedidaObtenerDTO, UsuarioObtenerDTO
 from api.models import Compartido, Estadistica, Hogar, Dispositivo, Invitacion, Medida, Usuario
-from api.serializers import CompartidoCrearSerializer, CompartidoObtencionSerializer, DispositivoActualizarSerializer, DispositivoCrearSerializer, DispositivoObtenerByIdSerializer, HogarCrearSerializer, HogarObtenerByIdSerializer, HogarObtenerSerializer, InvitacionEnviadasSerializer, InvitacionRecibidasSerializer, MedidaCrearSerializer, MedidaObtenerSerializer, UsuarioModificarSerializer, UsuarioObtenerSerializer
+from api.serializers import CompartidoCrearSerializer, CompartidoObtencionSerializer, DispositivoActualizarSerializer, DispositivoCrearSerializer, DispositivoObtenerByIdSerializer, HogarCrearSerializer, HogarObtenerByIdSerializer, HogarObtenerSerializer, InvitacionCrearSerializer, InvitacionEnviadasSerializer, InvitacionRecibidasSerializer, MedidaCrearSerializer, MedidaObtenerSerializer, UsuarioModificarSerializer, UsuarioObtenerSerializer
 from datetime import datetime
 from google.oauth2 import id_token
 from google.auth import transport
@@ -524,19 +524,21 @@ class OfrecerInvitacionView(APIView):
         if usuarioToken == None:
             return Response({"mensage":"Usuario no autorizado"},status=status.HTTP_401_UNAUTHORIZED)
 
-        serializer = InvitacionEnviadasSerializer(data=request.data)
+        serializer = InvitacionCrearSerializer(data=request.data)
         if serializer.is_valid():
             hogar = Hogar.objects.get(id=serializer.validated_data.pop("hogarInvitado").get("id"))
             if hogar.owner.id != usuarioToken.id:
                 return Response({"mensage":"Usuario no autorizado"},status=status.HTTP_401_UNAUTHORIZED)
 
             invitacion = Invitacion(
-                invitado = Usuario.objects.get(id=serializer.validated_data.pop("invitado").get("id")),
+                invitado = Usuario.objects.get(email=serializer.validated_data.get("correoInvitado")),
                 hogarInvitado = hogar,
                 invitante = usuarioToken
             )
             try:
                 invitacion.save()
+                return Response(data={"id":invitacion.id},status=status.HTTP_201_CREATED)
+
             except:
                 return Response({"mensaje":"Error: La invitación no ha podido ser creada"},status=status.HTTP_400_BAD_REQUEST)
         else:

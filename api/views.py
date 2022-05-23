@@ -529,18 +529,26 @@ class OfrecerInvitacionView(APIView):
             hogar = Hogar.objects.get(id=serializer.validated_data.pop("hogarInvitado").get("id"))
             if hogar.owner.id != usuarioToken.id:
                 return Response({"mensage":"Usuario no autorizado"},status=status.HTTP_401_UNAUTHORIZED)
-
-            invitacion = Invitacion(
-                invitado = Usuario.objects.get(email=serializer.validated_data.get("correoInvitado")),
-                hogarInvitado = hogar,
-                invitante = usuarioToken
-            )
-            try:
-                invitacion.save()
-                return Response(data={"id":invitacion.id},status=status.HTTP_201_CREATED)
-
+            try: 
+                invitado_aux = Usuario.objects.get(email=serializer.validated_data.get("correoInvitado"))
             except:
-                return Response({"mensaje":"Error: La invitación no ha podido ser creada"},status=status.HTTP_400_BAD_REQUEST)
+                return Response({"mensaje":"Error: No existe usuario con ese email en la plataforma"},status=status.HTTP_400_BAD_REQUEST)
+
+            ya_invitado = Invitacion.objects.filter(invitado = invitado_aux, hogarInvitado = hogar, invitante = usuarioToken)
+            if ya_invitado.count() == 0 :
+                invitacion = Invitacion(
+                    invitado = invitado_aux,
+                    hogarInvitado = hogar,
+                    invitante = usuarioToken
+                )
+                try:
+                    invitacion.save()
+                    return Response(data={"id":invitacion.id},status=status.HTTP_201_CREATED)
+                except:
+                    return Response({"mensaje":"Error: La invitación no ha podido ser creada"},status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({"mensaje":"Error: Hay ya una invitación pendiente."},status=status.HTTP_400_BAD_REQUEST)
+            
         else:
             return Response({"mensaje":"Error: El formato de la invitación es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
 

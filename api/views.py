@@ -598,6 +598,13 @@ class CompartidoView(APIView):
 
         serializer = CompartidoCrearSerializer(data=request.data)
         if serializer.is_valid():
+            invitacion = Invitacion.objects.filter(hogarInvitado__id=serializer.validated_data.pop("hogarCompartido").get("id"))
+            invitacion = invitacion.filter(invitado__id=usuarioToken.id)
+            if invitacion.count() == 0:
+                return Response({"mensage":"No tienes invtación para compartir"},status=status.HTTP_400_BAD_REQUEST)
+            else:
+                invitacion.delete()
+
             compartido = Compartido(
                 compartido = usuarioToken,
                 hogarCompartido = Hogar.objects.get(id=serializer.validated_data.pop("hogarCompartido").get("id"))                
@@ -609,7 +616,6 @@ class CompartidoView(APIView):
                 return Response({"mensaje":"Error: La compartición no ha podido ser creado."},status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"mensaje":"Error: El formato del dispositivo es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
-
 #/compartidos/:id
 class CompartidosIDView(APIView):
     def delete(self,request,id,format=None):

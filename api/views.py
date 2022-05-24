@@ -530,7 +530,7 @@ class OfrecerInvitacionView(APIView):
             if hogar.owner.id != usuarioToken.id:
                 return Response({"mensage":"Usuario no autorizado"},status=status.HTTP_401_UNAUTHORIZED)
             try: 
-                invitado_aux = Usuario.objects.get(email=serializer.validated_data.get("correoInvitado"))
+                invitado_aux = Usuario.objects.filter(email__iexact=serializer.validated_data.get("correoInvitado")).first()
             except:
                 return Response({"mensaje":"Error: No existe usuario con ese email en la plataforma"},status=status.HTTP_400_BAD_REQUEST)
 

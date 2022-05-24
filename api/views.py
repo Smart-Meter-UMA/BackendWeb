@@ -356,10 +356,10 @@ class DispositivosView(APIView):
                     maxDiaKw = 0,
                     minMesKw = 0,
                     maxMesKw = 0,
-                    fechaMinDiaKwh = None,
-                    fechaMaxDiaKwh = None,
-                    fechaMinMesKwh = None,
-                    fechaMaxMesKwh = None
+                    fechaMinDiaKwh = ahora,
+                    fechaMaxDiaKwh = ahora,
+                    fechaMinMesKwh = ahora,
+                    fechaMaxMesKwh = ahora
                 )
                 estadistica.save()
                 token = jwt.encode(dispositivo,key=KEY_SECRECT,algorithm=ALGORITMO_JWT)

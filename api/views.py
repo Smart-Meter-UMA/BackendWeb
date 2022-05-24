@@ -543,7 +543,7 @@ class OfrecerInvitacionView(APIView):
                 )
                 try:
                     invitacion.save()
-                    return Response(data={"id":invitacion.id},status=status.HTTP_201_CREATED)
+                    return Response(status=status.HTTP_201_CREATED)
                 except:
                     return Response({"mensaje":"Error: La invitación no ha podido ser creada"},status=status.HTTP_400_BAD_REQUEST)
             else:

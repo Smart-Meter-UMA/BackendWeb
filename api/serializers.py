@@ -24,16 +24,18 @@ class DispositivoCrearSerializer(serializers.Serializer):
     hogar = HogarObtenerSerializer()
 
 class EstadisticaObtenerSerializer(serializers.Serializer):
-    mediaKwhDiaria = serializers.FloatField()
-    mediaKwhMensual = serializers.FloatField()
-    minKWHDiaria = serializers. FloatField()
+    consumidoHoy = serializers.FloatField()
+    consumidoMes = serializers.FloatField()
+    mediaKWHDiaria = serializers.FloatField()
+    mediaKWHMensual = serializers.FloatField()
+    minKWHDiario = serializers. FloatField()
     diaMinKWHGastado = serializers.DateField()
     maxKWHDiario =  serializers. FloatField()
     diaMaxKWHGastado = serializers.DateField()
     minKWHMensual =  serializers. FloatField()
     mesMinKWHGastado = serializers.DateField()
-    maxKwhMensual = serializers.FloatField()
-    mesMaxKwhGastado = serializers.DateField()
+    maxKWHMensual = serializers.FloatField()
+    mesMaxKWHGastado = serializers.DateField()
 
 class DispositivoObtenerByIdSerializer(serializers.Serializer):
     id = serializers.IntegerField()
@@ -88,11 +90,13 @@ class InvitacionRecibidasSerializer(serializers.Serializer):
     ofertante = UsuarioObtenerSerializer()
     hogarInvitado = HogarObtenerSerializer()
 
+
+
 class HogarObtenerByIdSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     nombre = serializers.CharField(max_length=20)
     potencia_contratada = serializers.IntegerField()
-    dispositivos = DispositivoModificarSerializer(many=True)
+    dispositivos = DispositivoHogarSerializer(many=True)
     editable = serializers.BooleanField()
 
 class CompartidoCrearSerializer(serializers.Serializer):

@@ -389,7 +389,6 @@ class DispositivoIDView(APIView):
 
         estadistica = Estadistica.objects.get(dispositivo__id=id)
         dispositivoDTO = DispositivoObtenerByIdDTO(dispositivo,estadistica)
-
         serializer = DispositivoObtenerByIdSerializer(dispositivoDTO)
 
         return Response(serializer.data,status=status.HTTP_200_OK)

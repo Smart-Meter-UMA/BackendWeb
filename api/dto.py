@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from api.models import Estadistica
+
 
 class UsuarioObtenerDTO():
     def __init__(self, usuario):
@@ -44,14 +46,25 @@ class DispositivoDTO():
             lista.append(DispositivoDTO(d))
         return lista
 
-
-def enHoras(time):
-    time / 3600
+class DispositivoHogarObtenerDTO():
+    def __init__(self, hogar):
+        self.id = hogar.id
+        self.nombre = hogar.nombre
+        self.estadistica = EstadisticaDTO(Estadistica.objects.get(dispositivo__id=hogar.id))
+    
+    @staticmethod
+    def toDispositivoHogarObtenerDTO(dispositivos):
+        lista = []
+        for d in dispositivos:
+            lista.append(DispositivoHogarObtenerDTO(d))
+        return lista
 
 class EstadisticaDTO():
     def __init__(self,estadistica):
         #TODO: Hacer las estadistica
         self.minKWHDiario = estadistica.minDiaKwh
+        self.consumidoHoy = estadistica.sumaDiaKwh
+        self.consumidoMes = estadistica.sumaMesKwh
         self.diaMinKWHGastado = estadistica.fechaMinDiaKwh
         self.maxKWHDiario = estadistica.maxDiaKwh
         self.diaMaxKWHGastado = estadistica.fechaMaxDiaKwh
@@ -61,19 +74,14 @@ class EstadisticaDTO():
         self.mesMaxKWHGastado = estadistica.fechaMaxMesKwh
 
         ahora = datetime.now()
-        timePasadoEnElDia = enHoras(ahora - self.fechaDia)
-        timePasadoEnElMes = enHoras(ahora - self.fechaMes)
-        
-        self.mediaKWHDiaria = estadistica.sumaDiaKwh / timePasadoEnElDia
-        self.mediaKWHMensual = estadistica.sumaMesKwh / timePasadoEnElMes
-        
-        pass
+        self.mediaKWHDiaria = estadistica.sumaDiaKwh / ((ahora - datetime.fromtimestamp(estadistica.fechaDia.timestamp())).total_seconds()/3600)
+        self.mediaKWHMensual = estadistica.sumaMesKwh / ((ahora - datetime.fromtimestamp(estadistica.fechaMes.timestamp())).total_seconds()/3600)
 
 class DispositivoObtenerByIdDTO():
     def __init__(self, hogar, estadistica):
         self.id = hogar.id
         self.nombre = hogar.nombre
-        self.estadistica = EstadisticaDTO(estadistica)
+        self.estadisticas = EstadisticaDTO(estadistica)
 
 class InvitacionDTO():
     def __init__(self, invitacion):

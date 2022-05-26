@@ -74,8 +74,8 @@ class EstadisticaDTO():
         self.mesMaxKWHGastado = estadistica.fechaMaxMesKwh
 
         ahora = datetime.now()
-        self.mediaKWHDiaria = estadistica.sumaDiaKwh / ((ahora - datetime.fromtimestamp(estadistica.fechaDia.timestamp())).total_seconds()/3600)
-        self.mediaKWHMensual = estadistica.sumaMesKwh / ((ahora - datetime.fromtimestamp(estadistica.fechaMes.timestamp())).total_seconds()/3600)
+        self.mediaKWHDiaria = estadistica.sumaTotalKwh / ((estadistica.numDiasTotal * 24) + ((ahora - datetime.fromtimestamp(estadistica.fechaDia.timestamp())).total_seconds()/3600))
+        self.mediaKWHMensual = estadistica.sumaTotalKwh / ((estadistica.numMesTotal * 730.001) + ((ahora - datetime.fromtimestamp(estadistica.fechaMes.timestamp())).total_seconds()/3600))
 
 class DispositivoObtenerByIdDTO():
     def __init__(self, hogar, estadistica):

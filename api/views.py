@@ -39,7 +39,8 @@ def autorizar_usuario(request,login):
                 usuario = Usuario(
                     nombre=idinfo['given_name'],
                     apellidos=idinfo['family_name'],
-                    email=email
+                    email=email,
+                    notificacion_invitados = False
                 ) 
                 usuario.save()
                 return usuario
@@ -338,7 +339,8 @@ class DispositivosView(APIView):
                 limite_maximo = 0,
                 tiempo_medida = TIEMPO_MEDIDA_ESTANDAR,
                 tiempo_refresco = TIEMPO_REFRESCO_ESTANDAR,
-                hogar = Hogar.objects.get(id=serializer.validated_data.pop("hogar").get("id"))
+                hogar = Hogar.objects.get(id=serializer.validated_data.pop("hogar").get("id")),
+                verificado = False
             )
             try:
                 dispositivo.save()
@@ -369,6 +371,25 @@ class DispositivosView(APIView):
         else:
             return Response({"mensaje":"Error: El formato del dispositivo es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
 
+#/verificacionDispositivo
+class DispositivosVerificacionView(APIView):
+    def post(self,request,format=None):
+        dispositivo = autorizar_dispositivo(request)
+        if dispositivo == None:
+            return Response({"mensage":"Dispositivo no autorizado"},status=status.HTTP_401_UNAUTHORIZED)
+        
+        if dispositivo.verificado == True:
+            return Response({"mensage":"Error: El dispositivo ya fue verificado"},status=status.HTTP_400_BAD_REQUEST)
+
+        dispositivo.verificado = True
+        try:
+            dispositivo.save()
+            return Response(status=status.HTTP_200_OK)
+        except:
+            return Response({"mensaje":"Error: El dispositivo no se ha podido verificar"},status=status.HTTP_400_BAD_REQUEST)
+
+
+
 #/dispositivos/:id
 class DispositivoIDView(APIView):
     def get(self,request,id,format=None):
@@ -380,6 +401,9 @@ class DispositivoIDView(APIView):
             dispositivo = Dispositivo.objects.get(id=id)
         except:
             return Response({"mensaje":"Error: No se ha encontrado ese dispositivo con ese ID"},status=status.HTTP_404_NOT_FOUND)
+        
+        if dispositivo.verificado == False:
+            return Response({"mensage":"El dispositivo todavía no esta verificado"},status=status.HTTP_400_BAD_REQUEST)
 
         compartido = Compartido.objects.filter(hogarCompartido__id=dispositivo.hogar.id)
         compartido = compartido.filter(compartido__id=usuarioToken.id)
@@ -402,6 +426,9 @@ class DispositivoIDView(APIView):
             dipositivo = Dispositivo.objects.get(id=id)
         except:
             return Response({"mensaje":"Error: No se ha encontrado un dispositivo con ese ID."},status=status.HTTP_404_NOT_FOUND)
+        
+        if dipositivo.verificado == False:
+            return Response({"mensage":"El dispositivo todavía no esta verificado"},status=status.HTTP_400_BAD_REQUEST)
         
         if usuarioToken.id != dipositivo.hogar.owner.id:
             return Response({"mensage":"Usuario no autorizado"},status=status.HTTP_401_UNAUTHORIZED)
@@ -435,6 +462,9 @@ class DispositivoIDView(APIView):
         except:
             return Response({"mensaje":"Error: No se ha encontrado un dispositivo con ese ID."},status=status.HTTP_404_NOT_FOUND)
         
+        if dispositivo.verificado == False:
+            return Response({"mensage":"El dispositivo todavía no esta verificado"},status=status.HTTP_400_BAD_REQUEST)
+
         if usuarioToken.id != dispositivo.hogar.owner.id:
             return Response({"mensage":"Usuario no autorizado"},status=status.HTTP_401_UNAUTHORIZED)
 
@@ -458,6 +488,9 @@ class DispositivoIDMedidadView(APIView):
         except:
             return Response({"mensaje":"Error: No se ha encontrado ese dispositivo con ese ID"},status=status.HTTP_404_NOT_FOUND)
 
+        if dispositivo.verificado == False:
+            return Response({"mensage":"El dispositivo todavía no esta verificado"},status=status.HTTP_400_BAD_REQUEST)
+
         compartido = Compartido.objects.filter(hogarCompartido__id=dispositivo.hogar.id)
         compartido = compartido.filter(compartido__id=usuarioToken.id)
 
@@ -468,6 +501,18 @@ class DispositivoIDMedidadView(APIView):
             medidas = Medida.objects.get(dispositivo__id=id)
         except:
             return Response({"mensaje":"Error: No se ha encontrado las medidas de ese dispositivo con ese ID"},status=status.HTTP_404_NOT_FOUND)
+
+        if request.query_params.get("minDate") is not None:
+            medidas = medidas.filter(fecha__gte=request.query_params.get("minDate"))
+            
+        if request.query_params.get("maxDate") is not None:
+            medidas = medidas.filter(fecha__lte=request.query_params.get("maxDate"))
+
+        if request.query_params.get("minData") is not None:
+            medidas = medidas.filter(kw__gte=request.query_params.get("minDate"))
+            
+        if request.query_params.get("maxData") is not None:
+            medidas = medidas.filter(kw__lte=request.query_params.get("maxDate"))
 
         medidasDTO = MedidaObtenerDTO.toMedidaObtenerDTO(medidas)
         serializer = MedidaObtenerSerializer(medidasDTO,many=True)
@@ -491,6 +536,10 @@ class MedidaView(APIView):
         dispositivo = autorizar_dispositivo(request)
         if dispositivo == None:
             return Response({"mensage":"Dispositivo no autorizado"},status=status.HTTP_401_UNAUTHORIZED)
+        
+        if dispositivo.verificado == False:
+            return Response({"mensage":"El dispositivo todavía no esta verificado"},status=status.HTTP_400_BAD_REQUEST)
+
         listaKwTiempo = []
         for medida in request.data:
             serializer = MedidaCrearSerializer(data=medida)

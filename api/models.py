@@ -5,6 +5,7 @@ class Usuario(models.Model):
     email = models.EmailField()
     nombre = models.CharField(max_length=30)
     apellidos = models.CharField(max_length=30)
+    notificacion_invitados = models.BooleanField()
     
 class Hogar(models.Model):
     nombre = models.CharField(max_length=20)
@@ -22,6 +23,7 @@ class Invitacion(models.Model):
 
 class Dispositivo(models.Model):
     nombre = models.CharField(max_length=20)
+    verificado = models.BooleanField()
     notificacion = models.BooleanField()
     general = models.BooleanField()
     limite_minimo = models.FloatField()

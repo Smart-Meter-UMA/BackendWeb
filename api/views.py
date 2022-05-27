@@ -1,3 +1,4 @@
+from distutils.log import error
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
@@ -646,16 +647,16 @@ class CompartidoView(APIView):
 
         serializer = CompartidoCrearSerializer(data=request.data)
         if serializer.is_valid():
-            invitacion = Invitacion.objects.filter(hogarInvitado__id=serializer.validated_data.pop("hogarCompartido").get("id"))
+            id_hogar_compartido = serializer.validated_data.pop("hogarCompartido").get("id")
+            invitacion = Invitacion.objects.filter(hogarInvitado__id=id_hogar_compartido)
             invitacion = invitacion.filter(invitado__id=usuarioToken.id)
             if invitacion.count() == 0:
                 return Response({"mensage":"No tienes invtación para compartir"},status=status.HTTP_400_BAD_REQUEST)
             else:
                 invitacion.delete()
-
             compartido = Compartido(
                 compartido = usuarioToken,
-                hogarCompartido = Hogar.objects.get(id=serializer.validated_data.pop("hogarCompartido").get("id"))                
+                hogarCompartido = Hogar.objects.get(id = id_hogar_compartido)
             )
             try:
                 compartido.save()

@@ -30,7 +30,7 @@ class HogarObtenerDTO():
         for h in hogars:
             lista.append(HogarObtenerDTO(h,False))
         for c in compartidos:
-            lista.append(HogarObtenerDTO(c,True))
+            lista.append(HogarObtenerDTO(c.hogarCompartido,True))
         return lista
 
 

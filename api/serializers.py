@@ -5,10 +5,12 @@ class UsuarioObtenerSerializer(serializers.Serializer):
     email = serializers.EmailField()
     nombre = serializers.CharField(max_length=30)
     apellidos = serializers.CharField(max_length=30, allow_blank=True)
+    notificacion_invitados = serializers.BooleanField()
 
 class UsuarioModificarSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=30)
     apellidos = serializers.CharField(max_length=30, allow_blank=True)
+    notificacion_invitados = serializers.BooleanField()
 
 class HogarObtenerSerializer(serializers.Serializer):
     id = serializers.IntegerField()

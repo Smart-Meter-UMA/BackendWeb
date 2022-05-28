@@ -1,4 +1,5 @@
 from distutils.log import error
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
@@ -10,6 +11,7 @@ from google.oauth2 import id_token
 from google.auth import transport
 import math 
 import jwt
+from django.core.mail import EmailMultiAlternatives
 
 #CLIENT_ID = "724046535439-cch2rhprjcdak84a6id2jqckbt8d5ngf.apps.googleusercontent.com"
 #CLIENT_ID = "724046535439-h28ieq17aff119i367el50skelqkdgh4.apps.googleusercontent.com"
@@ -20,6 +22,31 @@ VOLTAJE_ESTANDAR = 230 #Voltios
 DESFASE_ESTANDAR = 1 
 ALGORITMO_JWT = ["HS256"]
 KEY_SECRECT = "key"
+
+def enviarCorreoInvitacion(usuarioToken,hogar,invitado_aux):
+    html_content = """
+        <h1>Hola, """ + usuarioToken.nombre + """</h1><br/>
+        Este correo sirve para notificarle de que acaba de recibir una invitación
+        de """+invitado_aux.nombre+""" ("""+invitado_aux.email+""") para que pueda
+        ver las estadísticas de """+hogar.nombre+"""<br/><br/>
+
+        Recureda que puede aceptar o denegar dicha invitación 
+        desde la pagina principal de Kproject<br/><br/>
+        <URL_KPROJECT><br/><br/>
+
+        KProject.
+    """
+
+    message = EmailMultiAlternatives(
+        subject="Notificación de invitación",
+        body='',
+        from_email=settings.EMAIL_HOST_USER,
+        to=[usuarioToken.email],
+        cc=[]
+    )
+
+    message.attach_alternative(html_content, "text/html")
+    message.send()
 
 def autorizar_usuario(request,login):
     if request.headers.get('Authorization') is not None:
@@ -163,6 +190,7 @@ class UsuarioIDView(APIView):
         if serializer.is_valid():
             usuario.nombre = serializer.validated_data.get("nombre")
             usuario.apellidos = serializer.validated_data.get("apellidos")
+            usuario.notificacion_invitados = serializer.validated_data.get("notificacion_invitados")
             try:
                 usuario.save()
                 return Response(status=status.HTTP_204_NO_CONTENT)
@@ -592,7 +620,9 @@ class OfrecerInvitacionView(APIView):
                 )
                 try:
                     invitacion.save()
-                    return Response(status=status.HTTP_201_CREATED)
+                    if usuarioToken.notificacion_invitados:
+                        enviarCorreoInvitacion(usuarioToken,hogar,invitado_aux)
+                    return Response({"id":invitacion.id},status=status.HTTP_201_CREATED)
                 except:
                     return Response({"mensaje":"Error: La invitación no ha podido ser creada"},status=status.HTTP_400_BAD_REQUEST)
             else:

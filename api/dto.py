@@ -9,6 +9,7 @@ class UsuarioObtenerDTO():
         self.email = usuario.email
         self.nombre = usuario.nombre
         self.apellidos = usuario.apellidos
+        self.notificacion_invitados = usuario.notificacion_invitados
     
     @staticmethod
     def toUsuarioObtenerDTO(usuarios):

@@ -41,25 +41,25 @@ class Medida(models.Model):
 
 class Estadistica(models.Model):
     dispositivo = models.ForeignKey(Dispositivo, related_name="dispositivo_estadisitica_diaria", on_delete=models.CASCADE)
-    
+
     fechaDia = models.DateTimeField()
-    sumaDiaKwh = models.FloatField()
+    sumaDiaKw = models.FloatField()
     
     fechaMes = models.DateTimeField()
-    sumaMesKwh = models.FloatField()
+    sumaMesKw = models.FloatField()
 
-    sumaTotalKwh = models.FloatField()
+    sumaTotalKw = models.FloatField()
     numDiasTotal = models.IntegerField()
     numMesTotal = models.IntegerField()
 
-    minDiaKwh = models.FloatField()
-    fechaMinDiaKwh = models.DateField()
-    maxDiaKwh = models.FloatField()
-    fechaMaxDiaKwh = models.DateField()
+    minDiaKw = models.FloatField()
+    fechaMinDiaKw = models.DateField()
+    maxDiaKw = models.FloatField()
+    fechaMaxDiaKw = models.DateField()
 
-    minMesKwh = models.FloatField()
-    fechaMinMesKwh = models.DateField()
-    maxMesKwh = models.FloatField()
-    fechaMaxMesKwh = models.DateField()
+    minMesKw = models.FloatField()
+    fechaMinMesKw = models.DateField()
+    maxMesKw = models.FloatField()
+    fechaMaxMesKw = models.DateField()
 
 

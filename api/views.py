@@ -38,10 +38,129 @@ def enviarCorreoInvitacion(usuarioToken,hogar,invitado_aux):
     """
 
     message = EmailMultiAlternatives(
-        subject="Notificación de invitación",
+        subject="Nueva invitación",
         body='',
         from_email=settings.EMAIL_HOST_USER,
         to=[usuarioToken.email],
+        cc=[]
+    )
+
+    message.attach_alternative(html_content, "text/html")
+    message.send()
+
+def enviarCorreoAceptadoInvitacion(usuarioToken,hogarCompartido,invitante):
+    html_content = """
+        <h1>Hola, """ + invitante.nombre + """</h1><br/>
+        Este correo sirve para notificarle de que el usaurio """+usuarioToken.nombre+""" 
+        ("""+usuarioToken.email+""") ha aceptado la invitación para que pueda
+        ver las estadísticas de """+hogarCompartido.nombre+"""<br/><br/>
+
+        Recureda que puede ver la lista de usuarios compartidos en:<br/><br/>
+        <URL_KPROJECT><br/><br/>
+
+        KProject.
+    """
+
+    message = EmailMultiAlternatives(
+        subject="Invitación aceptada",
+        body='',
+        from_email=settings.EMAIL_HOST_USER,
+        to=[invitante.email],
+        cc=[]
+    )
+
+    message.attach_alternative(html_content, "text/html")
+    message.send()
+
+def enviarCorreoRechazadoInvitacion(usuarioToken,hogarCompartido,invitante):
+    html_content = """
+    <h1>Hola, """ + invitante.nombre + """</h1><br/>
+    Este correo sirve para notificarle de que el usaurio """+usuarioToken.nombre+""" 
+    ("""+usuarioToken.email+""") ha denegado la invitación para que pueda
+    ver las estadísticas de """+hogarCompartido.nombre+"""<br/><br/>
+
+    Recureda que puede ver la lista de usuarios compartidos en:<br/><br/>
+    <URL_KPROJECT><br/><br/>
+
+    KProject.
+    """
+
+    message = EmailMultiAlternatives(
+        subject="Invitación denegada",
+        body='',
+        from_email=settings.EMAIL_HOST_USER,
+        to=[invitante.email],
+        cc=[]
+    )
+
+    message.attach_alternative(html_content, "text/html")
+    message.send()
+
+def enviarCorreoTeHanDejadoCompartir(usuarioToken,hogarCompartido,compartido):
+    html_content = """
+    <h1>Hola, """ + compartido.nombre + """</h1><br/>
+    Este correo sirve para notificarle de que el usaurio """+usuarioToken.nombre+""" 
+    ("""+usuarioToken.email+""") ha dejado de compartirle para que pueda
+    ver las estadísticas de """+hogarCompartido.nombre+"""<br/><br/>
+
+    Recureda que puede ver la lista de usuarios compartidos en:<br/><br/>
+    <URL_KPROJECT><br/><br/>
+
+    KProject.
+    """
+
+    message = EmailMultiAlternatives(
+        subject="Dejado de compartir",
+        body='',
+        from_email=settings.EMAIL_HOST_USER,
+        to=[compartido.email],
+        cc=[]
+    )
+
+    message.attach_alternative(html_content, "text/html")
+    message.send()
+
+def enviarCorreoSeHaSalido(usuarioToken,hogarCompartido,invitante):
+    html_content = """
+    <h1>Hola, """ + invitante.nombre + """</h1><br/>
+    Este correo sirve para notificarle de que el usaurio """+usuarioToken.nombre+""" 
+    ("""+usuarioToken.email+""") ha abandonado para que pueda
+    ver las estadísticas de """+hogarCompartido.nombre+"""<br/><br/>
+
+    KProject.
+    """
+
+    message = EmailMultiAlternatives(
+        subject="Hogar abandonado",
+        body='',
+        from_email=settings.EMAIL_HOST_USER,
+        to=[invitante.email],
+        cc=[]
+    )
+
+    message.attach_alternative(html_content, "text/html")
+    message.send()
+
+def enviarCorreoNotificacionLimiteMaximo(estadistica,actual):
+    html_content = """
+    <h1>Hola, """ + estadistica.dispositivo.owner.nombre + """</h1><br/>
+    Este correo sirve para notificarle de que el dispositivo"""+estadistica.dispositivo.nombre+"""
+    ha excedido su limite diario máximo:<br/><br/>
+        Limite máximo: """+estadistica.dispositivo.limite_maximo+"""<br/><br/>
+        Actual: """++"""<br/><br/>
+
+    Esto lo puedes ver a través de la pagina de Kproject:<br/><br/>
+    URLKPROJECT
+
+
+    KProject.
+    """
+
+    message = EmailMultiAlternatives(
+        subject="Hogar abandonado",
+        body='',
+        from_email=settings.EMAIL_HOST_USER,
+        to=[estadistica.dispositivo.owner.email],
         cc=[]
     )
 
@@ -145,6 +264,11 @@ def guardarEstadistica(idDispositivo, kw):
         estadistica.sumaMesKW = kw
 
         estadistica.fechaMes = datetime(year=ahora.year,month=ahora.month,day=1)
+    
+    valor = estadistica.sumaDiaKw / ((ahora - datetime.fromtimestamp(estadistica.fechaDia.timestamp())).total_seconds()/3600)
+    if estadistica.dispositivo.notificacion and valor > estadistica.dispositivo.limite_maximo:
+        enviarCorreoNotificacionLimiteMaximo(estadistica,valor)
+
 
 # Create your views here.
 
@@ -270,14 +394,18 @@ class HogarIDView(APIView):
         except:
             return Response({"mensaje":"Error: No se ha encontrado ese hogar con ese ID"},status=status.HTTP_404_NOT_FOUND)
 
+        idCompartido = -1
         compartido = Compartido.objects.filter(compartido__id=usuarioToken.id)
         compartido = compartido.filter(hogarCompartido__id=hogar.id)
         if compartido.count() == 0 and hogar.owner.id != usuarioToken.id:
             return Response({"mensage":"Usuario no autorizado"},status=status.HTTP_401_UNAUTHORIZED)
+        
+        if compartido.count() != 0:
+            idCompartido = compartido[0].id
 
         dispositivos = Dispositivo.objects.filter(hogar__id=id)
 
-        hogarDto = HogarObtenerByIdDTO(hogar,dispositivos,hogar.owner.id == usuarioToken.id)
+        hogarDto = HogarObtenerByIdDTO(hogar,dispositivos,idCompartido)
 
         serializer = HogarObtenerByIdSerializer(hogarDto)
 
@@ -663,7 +791,10 @@ class InvitacionsIDView(APIView):
             return Response({"mensage":"Usuario no autorizado"},status=status.HTTP_401_UNAUTHORIZED)
         
         try:
+            hogarCompartido = invitacion.hogarInvitado
+            invitante = invitacion.invitante
             invitacion.delete()
+            enviarCorreoRechazadoInvitacion(usuarioToken,hogarCompartido,invitante)
             return Response(status=status.HTTP_204_NO_CONTENT)
         except:
             return Response({"mensaje":"Error: No se ha podido eliminar un dispositivo con ese ID"},status=status.HTTP_400_BAD_REQUEST)
@@ -680,16 +811,21 @@ class CompartidoView(APIView):
             id_hogar_compartido = serializer.validated_data.pop("hogarCompartido").get("id")
             invitacion = Invitacion.objects.filter(hogarInvitado__id=id_hogar_compartido)
             invitacion = invitacion.filter(invitado__id=usuarioToken.id)
+            invitante = None
             if invitacion.count() == 0:
                 return Response({"mensage":"No tienes invtación para compartir"},status=status.HTTP_400_BAD_REQUEST)
             else:
+                invitante = invitacion[0].invitante
                 invitacion.delete()
+            
+            hogarCompartido = Hogar.objects.get(id = id_hogar_compartido)
             compartido = Compartido(
                 compartido = usuarioToken,
-                hogarCompartido = Hogar.objects.get(id = id_hogar_compartido)
+                hogarCompartido = hogarCompartido 
             )
             try:
                 compartido.save()
+                enviarCorreoAceptadoInvitacion(usuarioToken,hogarCompartido,invitante)
                 return Response(status=status.HTTP_201_CREATED)
             except:
                 return Response({"mensaje":"Error: La compartición no ha podido ser creado."},status=status.HTTP_400_BAD_REQUEST)
@@ -706,11 +842,19 @@ class CompartidosIDView(APIView):
             compartido = Compartido.objects.get(id=id)
         except:
             return Response({"mensaje":"Error: No se ha encontrado una comparticion con ese ID"},status=status.HTTP_404_NOT_FOUND)
-        
-        if(compartido.hogarCompartido.owner.id != usuarioToken.id):
+    
+        if(compartido.hogarCompartido.owner.id != usuarioToken.id and compartido.compartido.id != usuarioToken.id):
             return Response({"mensage":"Usuario no autorizado"},status=status.HTTP_401_UNAUTHORIZED)
+        
         try:
+            hogarCompartido = compartido.hogarCompartido
+            compartidoUsuario = compartido.compartido
+            invitante = compartido.hogarCompartido.owner
             compartido.delete()
+            if compartido.hogarCompartido.owner.id == usuarioToken.id:
+                enviarCorreoTeHanDejadoCompartir(usuarioToken,hogarCompartido,compartido=compartidoUsuario)
+            else:
+                enviarCorreoSeHaSalido(usuarioToken,hogarCompartido,invitante)
             return Response(status=status.HTTP_204_NO_CONTENT)
         except:
             return Response({"mensaje":"Error: No se ha podido eliminar ese compartido con ese ID"},status=status.HTTP_400_BAD_REQUEST)

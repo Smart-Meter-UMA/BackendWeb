@@ -2,7 +2,6 @@ from datetime import datetime
 
 from api.models import Estadistica
 
-
 class UsuarioObtenerDTO():
     def __init__(self, usuario):
         self.id = usuario.id
@@ -36,9 +35,15 @@ class HogarObtenerDTO():
 
 
 class DispositivoDTO():
-    def __init__(self, hogar):
-        self.id = hogar.id
-        self.nombre = hogar.nombre
+    def __init__(self, dispositivo):
+        self.id = dispositivo.id
+        self.nombre = dispositivo.nombre
+        self.general = dispositivo.general
+        self.notificacion = dispositivo.notificacion
+        self.limite_minimo = dispositivo.limite_minimo
+        self.limite_maximo = dispositivo.limite_maximo
+        self.tiempo_medida = dispositivo.tiempo_medida
+        self.tiempo_refrescado = dispositivo.tiempo_refrescado
     
     @staticmethod
     def toDispositivoDTO(dispositivos):
@@ -60,23 +65,38 @@ class DispositivoHogarObtenerDTO():
             lista.append(DispositivoHogarObtenerDTO(d))
         return lista
 
+def obtenerNumDia(mes,anio):
+    if (mes == 1 or mes == 3 or mes == 5 or mes == 7 or mes == 8 or mes == 10 or mes == 12): 
+        return 31
+    
+    if (mes == 4 or mes == 6 or mes == 9 or mes == 11):
+        return 30
+    
+    if (mes == 2 and ((anio % 4 == 0) and ((anio % 100 != 0) or (anio % 400 == 0)))):
+        return 29
+    
+    if (mes == 2 and not((anio % 4 == 0) and ((anio % 100 != 0) or (anio % 400 == 0)))):
+        return 28
+    
+    return None
+
 class EstadisticaDTO():
     def __init__(self,estadistica):
         #TODO: Hacer las estadistica
-        self.minKWHDiario = estadistica.minDiaKwh
-        self.consumidoHoy = estadistica.sumaDiaKwh
-        self.consumidoMes = estadistica.sumaMesKwh
-        self.diaMinKWHGastado = estadistica.fechaMinDiaKwh
-        self.maxKWHDiario = estadistica.maxDiaKwh
-        self.diaMaxKWHGastado = estadistica.fechaMaxDiaKwh
-        self.minKWHMensual = estadistica.minMesKwh
-        self.mesMinKWHGastado = estadistica.fechaMinMesKwh
-        self.maxKWHMensual = estadistica.maxMesKwh
-        self.mesMaxKWHGastado = estadistica.fechaMaxMesKwh
-
         ahora = datetime.now()
-        self.mediaKWHDiaria = estadistica.sumaTotalKwh / ((estadistica.numDiasTotal * 24) + ((ahora - datetime.fromtimestamp(estadistica.fechaDia.timestamp())).total_seconds()/3600))
-        self.mediaKWHMensual = estadistica.sumaTotalKwh / ((estadistica.numMesTotal * 730.001) + ((ahora - datetime.fromtimestamp(estadistica.fechaMes.timestamp())).total_seconds()/3600))
+        self.consumidoHoy = estadistica.sumaDiaKw / ((ahora - datetime.fromtimestamp(estadistica.fechaDia.timestamp())).total_seconds()/3600)
+        self.consumidoMes = estadistica.sumaMesKw / ((ahora - datetime.fromtimestamp(estadistica.fechaMes.timestamp())).total_seconds()/3600)
+        self.minKWHDiario = estadistica.minDiaKw / 24
+        self.diaMinKWHGastado = estadistica.fechaMinDiaKw
+        self.maxKWHDiario = estadistica.maxDiaKw / 24
+        self.diaMaxKWHGastado = estadistica.fechaMaxDiaKw
+        self.minKWHMensual = estadistica.minMesKw / 24 * obtenerNumDia(estadistica.fechaMinMesKw.month,estadistica.fechaMinMesKw.year)
+        self.mesMinKWHGastado = estadistica.fechaMinMesKw
+        self.maxKWHMensual = estadistica.maxMesKw / 24 * obtenerNumDia(estadistica.fechaMaxMesKw.month,estadistica.fechaMaxMesKw.year)
+        self.mesMaxKWHGastado = estadistica.fechaMaxMesKw
+
+        self.mediaKWHDiaria = estadistica.sumaTotalKw / ((estadistica.numDiasTotal * 24) + ((ahora - datetime.fromtimestamp(estadistica.fechaDia.timestamp())).total_seconds()/3600))
+        self.mediaKWHMensual = estadistica.sumaTotalKw / ((estadistica.numMesTotal * 730.001) + ((ahora - datetime.fromtimestamp(estadistica.fechaMes.timestamp())).total_seconds()/3600))
 
 class DispositivoObtenerByIdDTO():
     def __init__(self, hogar, estadistica):
@@ -140,12 +160,12 @@ class MedidaObtenerDTO():
         return lista
 
 class HogarObtenerByIdDTO():
-    def __init__(self, hogar, dispositivos, editable):
+    def __init__(self, hogar, dispositivos, idCompartido):
         self.id = hogar.id
         self.potencia_contratada = hogar.potencia_contratada
         self.nombre = hogar.nombre
         self.dispositivos = DispositivoDTO.toDispositivoDTO(dispositivos)
-        self.editable = editable
+        self.idCompartido = idCompartido
 
 class InvtiacionsRecibidasDTO():
     def __init__(self, invitacions):

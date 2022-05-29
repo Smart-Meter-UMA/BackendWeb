@@ -45,9 +45,10 @@ class DispositivoObtenerByIdSerializer(serializers.Serializer):
     estadisticas = EstadisticaObtenerSerializer()
 
 class DispositivoActualizarSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
     nombre = serializers.CharField()
     notificacion = serializers.BooleanField()
-    limiteMaximo = serializers.IntegerField()
+    limite_maximo = serializers.IntegerField()
     general = serializers.BooleanField()
     limite_minimo = serializers.FloatField()
     tiempo_medida = serializers.IntegerField()
@@ -56,6 +57,12 @@ class DispositivoActualizarSerializer(serializers.Serializer):
 class DispositivoHogarSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     nombre = serializers.CharField(max_length=20)
+    general = serializers.BooleanField()
+    notificacion = serializers.BooleanField()
+    limite_minimo = serializers.IntegerField()
+    limite_maximo = serializers.IntegerField()
+    tiempo_medida = serializers.IntegerField()
+    tiempo_refrescado = serializers.IntegerField()
 
 class DispositivoModificarSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=20)
@@ -99,10 +106,11 @@ class HogarObtenerByIdSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=20)
     potencia_contratada = serializers.IntegerField()
     dispositivos = DispositivoHogarSerializer(many=True)
-    editable = serializers.BooleanField()
+    idCompartido = serializers.IntegerField()
 
 class CompartidoCrearSerializer(serializers.Serializer):
     hogarCompartido = HogarObtenerSerializer()
 
 class CompartidoObtencionSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
     compartido = UsuarioObtenerSerializer()

@@ -1,4 +1,5 @@
 from distutils.log import error
+from re import M
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework import status
@@ -13,9 +14,8 @@ import math
 import jwt
 from django.core.mail import EmailMultiAlternatives
 
-#CLIENT_ID = "724046535439-cch2rhprjcdak84a6id2jqckbt8d5ngf.apps.googleusercontent.com"
-#CLIENT_ID = "724046535439-h28ieq17aff119i367el50skelqkdgh4.apps.googleusercontent.com"
-CLIENT_ID = "724046535439-g4gdj010v7qdkpbcpu7qq9edjt61nbva.apps.googleusercontent.com"
+CLIENT_ID_MOVIL = "724046535439-h28ieq17aff119i367el50skelqkdgh4.apps.googleusercontent.com"
+CLIENT_ID_WEB = "724046535439-g4gdj010v7qdkpbcpu7qq9edjt61nbva.apps.googleusercontent.com"
 TIEMPO_MEDIDA_ESTANDAR = 10 #Segundos
 TIEMPO_REFRESCO_ESTANDAR = 15 #Minutos
 VOLTAJE_ESTANDAR = 230 #Voltios
@@ -172,9 +172,12 @@ def autorizar_usuario(request,login):
         token = request.headers.get('Authorization')
         idinfo = None
         try:
-            idinfo = id_token.verify_oauth2_token(token, transport.requests.Request(), CLIENT_ID)
+            idinfo = id_token.verify_oauth2_token(token, transport.requests.Request(), CLIENT_ID_WEB)
         except:
-            return None
+            try:
+                idinfo = id_token.verify_oauth2_token(token, transport.requests.Request(), CLIENT_ID_MOVIL)
+            except:
+                return None
 
         email = idinfo['email']
 
@@ -201,7 +204,7 @@ def autorizar_dispositivo(request):
         token = request.headers.get('Authorization')
         dispositivo = jwt.decode(token, key=KEY_SECRECT, algorithms=ALGORITMO_JWT)
         try:
-            return Dispositivo.objects.get(id=dispositivo.id)
+            return Dispositivo.objects.get(id=dispositivo.get('id'))
         except:
             return None
     else:
@@ -228,46 +231,64 @@ def obtenerNumDia(mes,anio):
 
 def guardarEstadistica(idDispositivo, kw):
     ahora = datetime.now()
-
-    estadistica = Estadistica.objects.get(dispositivo__id=idDispositivo)
-
-    estadistica.sumaTotalKW = estadistica.sumaTotalKW + kw
-
-    hoyUltHora = datetime(year=estadistica.fechaDia.year,month=estadistica.fechaDia.month,day=estadistica.fechaDia.day,hour=23,minute=59,second=59)
-    ultDiaMes = datetime(year=estadistica.fechaMes.year,month=estadistica.fechaMes.month,day=obtenerNumDia(estadistica.fechaMes.month,estadistica.fechaMes.year),hour=23,minute=59,second=59)
     
-    if ahora > hoyUltHora:
-        estadistica.sumaDiaKW = estadistica.sumaDiaKW + kw
+    estadistica = Estadistica.objects.get(dispositivo__id=idDispositivo)
+    estadistica.sumaTotalKw = estadistica.sumaTotalKw + kw
+    hoyUltHora = datetime(year=estadistica.fechaDia.year,month=estadistica.fechaDia.month,day=estadistica.fechaDia.day,hour=23,minute=59,second=59,microsecond=999999)
+    ultDiaMes = datetime(year=estadistica.fechaMes.year,month=estadistica.fechaMes.month,day=obtenerNumDia(estadistica.fechaMes.month,estadistica.fechaMes.year),hour=23,minute=59,second=59, microsecond=999999)
+    if ahora <= hoyUltHora:
+        estadistica.sumaDiaKw = estadistica.sumaDiaKw + kw
     else:
         estadistica.numDiasTotal = estadistica.numDiasTotal + 1
-        if estadistica.minDiaKw > estadistica.sumaDiaKW:
-            estadistica.fechaMinDiaKwh = datetime(year=estadistica.fechaDia.year,month=estadistica.fechaDia.month,day=estadistica.fechaDia.day,hour=0,minute=0,second=0)
-            estadistica.minDiaKw = estadistica.sumaDiaKW
-        if estadistica.maxDiaKw < estadistica.sumaDiaKW:
-            estadistica.fechaMaxDiaKwh = datetime(year=estadistica.fechaDia.year,month=estadistica.fechaDia.month,day=estadistica.fechaDia.day,hour=0,minute=0,second=0)
-            estadistica.maxDiaKw = estadistica.sumaDiaKW
-        estadistica.sumaDiaKW = kw
+        if estadistica.minDiaKw > estadistica.sumaDiaKw:
+            estadistica.fechaMinDiaKw = datetime(year=estadistica.fechaDia.year,month=estadistica.fechaDia.month,day=estadistica.fechaDia.day,hour=0,minute=0,second=0)
+            estadistica.minDiaKw = estadistica.sumaDiaKw
+        if estadistica.maxDiaKw < estadistica.sumaDiaKw:
+            estadistica.fechaMaxDiaKw = datetime(year=estadistica.fechaDia.year,month=estadistica.fechaDia.month,day=estadistica.fechaDia.day,hour=0,minute=0,second=0)
+            estadistica.maxDiaKw = estadistica.sumaDiaKw
+        estadistica.sumaDiaKw = kw
+        dia = (ahora.day + 1)%obtenerNumDia(ahora.month,ahora.year)
+        if dia == 1:
+            mes = (ahora.month + 1)%12
+        else:
+            mes = ahora.month
+        
+        if mes == 1:
+            anio = ahora.year + 1
+        else:
+            anio = ahora.year
 
-        estadistica.fechaDia = datetime(year=ahora.year,month=ahora.month,day=ahora.day)
-
-    if ahora > ultDiaMes:
-        estadistica.sumaMesKW = estadistica.sumaMesKW + kw
+        estadistica.fechaDia = datetime(year=anio,month=mes,day=dia)
+    
+    if ahora <= ultDiaMes:
+        estadistica.sumaMesKw = estadistica.sumaMesKw + kw
     else:
         estadistica.numMesTotal = estadistica.numMesTotal + 1
-        if estadistica.minMesKw > estadistica.sumaMesKW:
+        if estadistica.minMesKw > estadistica.sumaMesKw:
             estadistica.fechaMinMesKwh = datetime(year=estadistica.fechaMes.year,month=estadistica.fechaMes.month,day=1,hour=0,minute=0,second=0)
-            estadistica.minMesKw = estadistica.sumaMesKW
-        if estadistica.maxMesKw < estadistica.sumaMesKW:
+            estadistica.minMesKw = estadistica.sumaMesKw
+        if estadistica.maxMesKw < estadistica.sumaMesKw:
             estadistica.fechaMaxMesKwh = datetime(year=estadistica.fechaMes.year,month=estadistica.fechaMes.month,day=1,hour=0,minute=0,second=0)
-            estadistica.maxMesKw = estadistica.sumaMesKW
+            estadistica.maxMesKw = estadistica.sumaMesKw
         
-        estadistica.sumaMesKW = kw
-
-        estadistica.fechaMes = datetime(year=ahora.year,month=ahora.month,day=1)
+        estadistica.sumaMesKw = kw
+        mes = (ahora.month + 1)%12
+        if mes == 1:
+            anio = ahora.year + 1
+        else:
+            anio = ahora.year
+        estadistica.fechaMes = datetime(year=anio,month=mes,day=1)
+        print("hola")
     
-    valor = estadistica.sumaDiaKw / ((ahora - datetime.fromtimestamp(estadistica.fechaDia.timestamp())).total_seconds()/3600)
+    t = ahora - datetime.fromtimestamp(estadistica.fechaDia.timestamp())
+    tSeconds = t.total_seconds()
+    tHoras = tSeconds / 3600
+    valor = estadistica.sumaDiaKw / tHoras
+    estadistica.save()
     if estadistica.dispositivo.notificacion and valor > estadistica.dispositivo.limite_maximo:
         enviarCorreoNotificacionLimiteMaximo(estadistica,valor)
+
+
 
 
 # Create your views here.
@@ -521,7 +542,7 @@ class DispositivosView(APIView):
                     fechaMaxMesKwh = ahora
                 )
                 estadistica.save()
-                token = jwt.encode(dispositivo,key=KEY_SECRECT,algorithm=ALGORITMO_JWT)
+                token = jwt.encode(dispositivo,key=KEY_SECRECT,algorithm=ALGORITMO_JWT[0])
                 return Response({"token" : token},status=status.HTTP_201_CREATED)
             except:
                 return Response({"mensaje":"Error: El dispositivo no ha podido ser creado."},status=status.HTTP_400_BAD_REQUEST)
@@ -670,6 +691,13 @@ class DispositivoIDMedidadView(APIView):
             
         if request.query_params.get("maxData") is not None:
             medidas = medidas.filter(kw__lte=request.query_params.get("maxDate"))
+        
+        if (request.query_params.get('orderBy') is not None):
+            medidas = medidas.order_by(request.query_params.get('orderBy'))
+        
+        if (request.query_params.get('limit') is not None and request.query_params.get('offset') is not None):
+            medidas = medidas[int(request.query_params.get('offset')):int(request.query_params.get('offset'))+int(request.query_params.get('limit'))]
+
 
         medidasDTO = MedidaObtenerDTO.toMedidaObtenerDTO(medidas)
         serializer = MedidaObtenerSerializer(medidasDTO,many=True)
@@ -683,6 +711,24 @@ class MedidaView(APIView):
             return Response({"mensage":"Usuario no autorizado"},status=status.HTTP_401_UNAUTHORIZED)
 
         medidas = Medida.objects.all()
+
+        if request.query_params.get("minDate") is not None:
+            medidas = medidas.filter(fecha__gte=request.query_params.get("minDate"))
+            
+        if request.query_params.get("maxDate") is not None:
+            medidas = medidas.filter(fecha__lte=request.query_params.get("maxDate"))
+
+        if request.query_params.get("minData") is not None:
+            medidas = medidas.filter(kw__gte=request.query_params.get("minDate"))
+            
+        if request.query_params.get("maxData") is not None:
+            medidas = medidas.filter(kw__lte=request.query_params.get("maxDate"))
+        
+        if (request.query_params.get('orderBy') is not None):
+            medidas = medidas.order_by(request.query_params.get('orderBy'))
+
+        if (request.query_params.get('limit') is not None and request.query_params.get('offset') is not None):
+            medidas = medidas[int(request.query_params.get('offset')):int(request.query_params.get('offset'))+int(request.query_params.get('limit'))]
 
         medidasDTO = MedidaObtenerDTO.toMedidaObtenerDTO(medidas)
         serializer = MedidaObtenerSerializer(medidasDTO,many=True)
@@ -713,13 +759,14 @@ class MedidaView(APIView):
                     kw = kw
                 )
                 try:
+                    
                     medida.save()
+                    guardarEstadistica(dispositivo.id,kw)
                 except:
                     return Response({"mensaje":"Error: La medida no ha podido ser creado."},status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({"mensaje":"Error: El formato de la medida es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
-        
-        guardarEstadistica(dispositivo.id,listaKwTiempo)
+
         return Response({"tiempoRecogidaMedida":dispositivo.tiempo_medida,"tiempoActualizacionMedida":dispositivo.tiempo_refrescado})
 
 #ofrecerInvitacion/

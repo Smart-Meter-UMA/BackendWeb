@@ -662,21 +662,7 @@ class DispositivoIDMedidadView(APIView):
             return Response({"mensage":"Usuario no autorizado"},status=status.HTTP_401_UNAUTHORIZED)
 
         try:
-            dispositivo = Dispositivo.objects.get(id=id)
-        except:
-            return Response({"mensaje":"Error: No se ha encontrado ese dispositivo con ese ID"},status=status.HTTP_404_NOT_FOUND)
-
-        if dispositivo.verificado == False:
-            return Response({"mensage":"El dispositivo todavía no esta verificado"},status=status.HTTP_400_BAD_REQUEST)
-
-        compartido = Compartido.objects.filter(hogarCompartido__id=dispositivo.hogar.id)
-        compartido = compartido.filter(compartido__id=usuarioToken.id)
-
-        if compartido.count() == 0 and usuarioToken.id != dispositivo.hogar.owner.id:
-            return Response({"mensage":"Usuario no autorizado"},status=status.HTTP_401_UNAUTHORIZED)
-
-        try:
-            medidas = Medida.objects.get(dispositivo__id=id)
+            medidas = Medida.objects.filter(dispositivo__id=id)
         except:
             return Response({"mensaje":"Error: No se ha encontrado las medidas de ese dispositivo con ese ID"},status=status.HTTP_404_NOT_FOUND)
 

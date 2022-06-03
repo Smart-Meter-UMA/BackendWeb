@@ -13,6 +13,7 @@ from google.auth import transport
 import math 
 import jwt
 from django.core.mail import EmailMultiAlternatives
+import sys
 
 CLIENT_ID_MOVIL = "724046535439-h28ieq17aff119i367el50skelqkdgh4.apps.googleusercontent.com"
 CLIENT_ID_WEB = "724046535439-g4gdj010v7qdkpbcpu7qq9edjt61nbva.apps.googleusercontent.com"
@@ -236,6 +237,8 @@ def guardarEstadistica(idDispositivo, kw):
     estadistica.sumaTotalKw = estadistica.sumaTotalKw + kw
     hoyUltHora = datetime(year=estadistica.fechaDia.year,month=estadistica.fechaDia.month,day=estadistica.fechaDia.day,hour=23,minute=59,second=59,microsecond=999999)
     ultDiaMes = datetime(year=estadistica.fechaMes.year,month=estadistica.fechaMes.month,day=obtenerNumDia(estadistica.fechaMes.month,estadistica.fechaMes.year),hour=23,minute=59,second=59, microsecond=999999)
+
+
     if ahora <= hoyUltHora:
         estadistica.sumaDiaKw = estadistica.sumaDiaKw + kw
     else:
@@ -278,7 +281,6 @@ def guardarEstadistica(idDispositivo, kw):
         else:
             anio = ahora.year
         estadistica.fechaMes = datetime(year=anio,month=mes,day=1)
-        print("hola")
     
     t = ahora - datetime.fromtimestamp(estadistica.fechaDia.timestamp())
     tSeconds = t.total_seconds()
@@ -522,19 +524,19 @@ class DispositivosView(APIView):
             )
             try:
                 dispositivo.save()
-                ahora = datetime.now()
+                ahora = datetime.now() 
                 estadistica = Estadistica(
                     dispositivo = dispositivo,
-                    fechaDia = datetime(year=ahora.year,month=ahora.month,day=ahora.day),
+                    fechaDia = datetime(year=ahora.year,month=ahora.month,day=ahora.day,hour=0,minute=0,second=0,microsecond=000000),
                     sumaDiaKW = 0,
-                    fechaMes = datetime(year=ahora.year,month=ahora.month,day=1),
+                    fechaMes = datetime(year=ahora.year,month=ahora.month,day=1,hour=0,minute=0,second=0,microsecond=000000),
                     sumaMesKW = 0,
                     sumaTotalKW = 0,
-                    numDiasTotal = 1,
-                    numMesTotal = 1,
-                    minDiaKw = 0,
+                    numDiasTotal = 0,
+                    numMesTotal = 0,
+                    minDiaKw = sys.float_info.max,
                     maxDiaKw = 0,
-                    minMesKw = 0,
+                    minMesKw = sys.float_info.max,
                     maxMesKw = 0,
                     fechaMinDiaKwh = ahora,
                     fechaMaxDiaKwh = ahora,

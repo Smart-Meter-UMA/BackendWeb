@@ -747,7 +747,6 @@ class MedidaView(APIView):
                     kw = kw
                 )
                 try:
-                    
                     medida.save()
                     guardarEstadistica(dispositivo.id,kw)
                 except:
@@ -755,7 +754,7 @@ class MedidaView(APIView):
             else:
                 return Response({"mensaje":"Error: El formato de la medida es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({"tiempoRecogidaMedida":dispositivo.tiempo_medida,"tiempoActualizacionMedida":dispositivo.tiempo_refrescado})
+        return Response({"tiempoRecogidaMedida":dispositivo.tiempo_medida,"tiempoActualizacionMedida":dispositivo.tiempo_refrescado},status=status.HTTP_201_CREATED)
 
 #ofrecerInvitacion/
 class OfrecerInvitacionView(APIView):
@@ -795,7 +794,7 @@ class OfrecerInvitacionView(APIView):
             return Response({"mensaje":"Error: El formato de la invitación es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
 
 
-#invitacionRecibidas/
+#invitacionsRecibidas/
 class InvitacionsRecibidasView(APIView):
     def get(self,request,format=None):
         usuarioToken = autorizar_usuario(request,False)
@@ -832,7 +831,7 @@ class InvitacionsIDView(APIView):
             enviarCorreoRechazadoInvitacion(usuarioToken,hogarCompartido,invitante)
             return Response(status=status.HTTP_204_NO_CONTENT)
         except:
-            return Response({"mensaje":"Error: No se ha podido eliminar un dispositivo con ese ID"},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"mensaje":"Error: No se ha podido eliminar una invitacion con ese ID"},status=status.HTTP_400_BAD_REQUEST)
 
 #/compartidos
 class CompartidoView(APIView):

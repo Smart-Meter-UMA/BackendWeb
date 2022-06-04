@@ -675,10 +675,10 @@ class DispositivoIDMedidadView(APIView):
             medidas = medidas.filter(fecha__lte=request.query_params.get("maxDate"))
 
         if request.query_params.get("minData") is not None:
-            medidas = medidas.filter(kw__gte=request.query_params.get("minDate"))
+            medidas = medidas.filter(kw__gte=request.query_params.get("minData"))
             
         if request.query_params.get("maxData") is not None:
-            medidas = medidas.filter(kw__lte=request.query_params.get("maxDate"))
+            medidas = medidas.filter(kw__lte=request.query_params.get("maxData"))
         
         if (request.query_params.get('orderBy') is not None):
             medidas = medidas.order_by(request.query_params.get('orderBy'))
@@ -707,10 +707,10 @@ class MedidaView(APIView):
             medidas = medidas.filter(fecha__lte=request.query_params.get("maxDate"))
 
         if request.query_params.get("minData") is not None:
-            medidas = medidas.filter(kw__gte=request.query_params.get("minDate"))
+            medidas = medidas.filter(kw__gte=request.query_params.get("minData"))
             
         if request.query_params.get("maxData") is not None:
-            medidas = medidas.filter(kw__lte=request.query_params.get("maxDate"))
+            medidas = medidas.filter(kw__lte=request.query_params.get("maxData"))
         
         if (request.query_params.get('orderBy') is not None):
             medidas = medidas.order_by(request.query_params.get('orderBy'))

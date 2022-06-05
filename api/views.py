@@ -774,7 +774,8 @@ class OfrecerInvitacionView(APIView):
                 return Response({"mensaje":"Error: No existe usuario con ese email en la plataforma"},status=status.HTTP_400_BAD_REQUEST)
 
             ya_invitado = Invitacion.objects.filter(invitado = invitado_aux, hogarInvitado = hogar, invitante = usuarioToken)
-            if ya_invitado.count() == 0 :
+            ya_compartido = Compartido.objects.filter(compartido=invitado_aux, hogarCompartido=hogar)
+            if ya_invitado.count() == 0 and ya_compartido.count() == 0:
                 invitacion = Invitacion(
                     invitado = invitado_aux,
                     hogarInvitado = hogar,

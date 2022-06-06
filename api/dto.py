@@ -88,13 +88,13 @@ class EstadisticaDTO():
         sumaMes = estadistica.sumaMesKw / 1000
         self.consumidoHoy = round(sumaDia / (abs((ahora - datetime.fromtimestamp(estadistica.fechaDia.timestamp()))).total_seconds()/3600),3)
         self.consumidoMes = round(sumaMes / (abs((ahora - datetime.fromtimestamp(estadistica.fechaMes.timestamp()))).total_seconds()/3600),3)
-        self.minKWHDiario = estadistica.minDiaKw / (24 * 1000) if estadistica.minDiaKw < sys.float_info.max else -1
+        self.minKWHDiario = round((estadistica.minDiaKw / (24 * 1000) if estadistica.minDiaKw < sys.float_info.max else -1),3)
         self.diaMinKWHGastado = estadistica.fechaMinDiaKw 
-        self.maxKWHDiario = estadistica.maxDiaKw / (24 * 1000) if estadistica.maxDiaKw > 0 else -1
+        self.maxKWHDiario = round((estadistica.maxDiaKw / (24 * 1000) if estadistica.maxDiaKw > 0 else -1),3)
         self.diaMaxKWHGastado = estadistica.fechaMaxDiaKw
-        self.minKWHMensual = estadistica.minMesKw / (24 * obtenerNumDia(estadistica.fechaMinMesKw.month,estadistica.fechaMinMesKw.year) * 1000) if estadistica.minMesKw < sys.float_info.max else -1
+        self.minKWHMensual = round((estadistica.minMesKw / (24 * obtenerNumDia(estadistica.fechaMinMesKw.month,estadistica.fechaMinMesKw.year) * 1000) if estadistica.minMesKw < sys.float_info.max else -1),3)
         self.mesMinKWHGastado = estadistica.fechaMinMesKw
-        self.maxKWHMensual = estadistica.maxMesKw / (24 * obtenerNumDia(estadistica.fechaMaxMesKw.month,estadistica.fechaMaxMesKw.year) * 1000) if estadistica.maxMesKw > 0 else -1
+        self.maxKWHMensual = round((estadistica.maxMesKw / (24 * obtenerNumDia(estadistica.fechaMaxMesKw.month,estadistica.fechaMaxMesKw.year) * 1000) if estadistica.maxMesKw > 0 else -1),3)
         self.mesMaxKWHGastado = estadistica.fechaMaxMesKw
 
         sumaTotal = estadistica.sumaTotalKw / 1000

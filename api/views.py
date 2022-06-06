@@ -902,4 +902,19 @@ class LoginView(APIView):
         usuarioDTO = UsuarioObtenerDTO(usuarioToken)
         serializers = UsuarioObtenerSerializer(usuarioDTO)
         return Response(serializers.data,status=status.HTTP_200_OK)
+
+import requests
+class PreciosView(APIView):
+    def get(self,request,id,format=None):
+        resp = None
+        print(id)
+        if id == 1:
+            fecha = request.query_params.get("fecha")
+            print(fecha)
+            if fecha is None:
+                return Response({"mensage":"Error: para este modo hace falta la fecha"})
+            
+            resp = requests.get('http://51.38.189.176/pvpc_dia/' + fecha)
+        
+        return Response(resp.json(),status=status.HTTP_200_OK)
         

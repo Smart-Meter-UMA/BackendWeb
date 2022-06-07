@@ -1,5 +1,3 @@
-from distutils.log import error
-from re import M
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework import status
@@ -518,7 +516,7 @@ class DispositivosView(APIView):
                 limite_minimo = 0,
                 limite_maximo = 0,
                 tiempo_medida = TIEMPO_MEDIDA_ESTANDAR,
-                tiempo_refresco = TIEMPO_REFRESCO_ESTANDAR,
+                tiempo_refrescado = TIEMPO_REFRESCO_ESTANDAR,
                 hogar = Hogar.objects.get(id=serializer.validated_data.pop("hogar").get("id")),
                 verificado = False
             )
@@ -528,23 +526,35 @@ class DispositivosView(APIView):
                 estadistica = Estadistica(
                     dispositivo = dispositivo,
                     fechaDia = datetime(year=ahora.year,month=ahora.month,day=ahora.day,hour=0,minute=0,second=0,microsecond=000000),
-                    sumaDiaKW = 0,
+                    sumaDiaKw = 0,
                     fechaMes = datetime(year=ahora.year,month=ahora.month,day=1,hour=0,minute=0,second=0,microsecond=000000),
-                    sumaMesKW = 0,
-                    sumaTotalKW = 0,
+                    sumaMesKw = 0,
+                    sumaTotalKw = 0,
                     numDiasTotal = 0,
                     numMesTotal = 0,
                     minDiaKw = sys.float_info.max,
                     maxDiaKw = 0,
                     minMesKw = sys.float_info.max,
                     maxMesKw = 0,
-                    fechaMinDiaKwh = ahora,
-                    fechaMaxDiaKwh = ahora,
-                    fechaMinMesKwh = ahora,
-                    fechaMaxMesKwh = ahora
+                    fechaMinDiaKw = ahora,
+                    fechaMaxDiaKw = ahora,
+                    fechaMinMesKw = ahora,
+                    fechaMaxMesKw = ahora
                 )
                 estadistica.save()
-                token = jwt.encode(dispositivo,key=KEY_SECRECT,algorithm=ALGORITMO_JWT[0])
+                objeto = {
+                    'id':dispositivo.id,
+                    'nombre': dispositivo.nombre,
+                    'notificacion' : False,
+                    'general' : False,
+                    'limite_minimo' : 0,
+                    'limite_maximo' : 0,
+                    'tiempo_medida' : TIEMPO_MEDIDA_ESTANDAR,
+                    'tiempo_refrescado' : TIEMPO_REFRESCO_ESTANDAR,
+                    'id_hogar': dispositivo.hogar.id,
+                    'verificado' : False
+                }
+                token = jwt.encode(objeto,key=KEY_SECRECT,algorithm=ALGORITMO_JWT[0])
                 return Response({"token" : token},status=status.HTTP_201_CREATED)
             except:
                 return Response({"mensaje":"Error: El dispositivo no ha podido ser creado."},status=status.HTTP_400_BAD_REQUEST)

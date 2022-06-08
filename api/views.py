@@ -544,15 +544,8 @@ class DispositivosView(APIView):
                 estadistica.save()
                 objeto = {
                     'id':dispositivo.id,
-                    'nombre': dispositivo.nombre,
-                    'notificacion' : False,
-                    'general' : False,
-                    'limite_minimo' : 0,
-                    'limite_maximo' : 0,
-                    'tiempo_medida' : TIEMPO_MEDIDA_ESTANDAR,
-                    'tiempo_refrescado' : TIEMPO_REFRESCO_ESTANDAR,
                     'id_hogar': dispositivo.hogar.id,
-                    'verificado' : False
+                    'id_owner':dispositivo.hogar.owner.id
                 }
                 token = jwt.encode(objeto,key=KEY_SECRECT,algorithm=ALGORITMO_JWT[0])
                 return Response({"token" : token},status=status.HTTP_201_CREATED)
@@ -925,6 +918,8 @@ class PreciosView(APIView):
                 return Response({"mensage":"Error: para este modo hace falta la fecha"})
             
             resp = requests.get('http://51.38.189.176/pvpc_dia/' + fecha)
+        elif id == 2:
+            resp = requests.get('http://51.38.189.176/obtener_tarifas/')
         
         return Response(resp.json(),status=status.HTTP_200_OK)
         

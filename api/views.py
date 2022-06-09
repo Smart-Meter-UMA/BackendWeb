@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from api.dto import CompartidoObtencionDTO, DispositivoObtenerByIdDTO, HogarObtenerByIdDTO, HogarObtenerDTO, InvitacionDTO, InvtiacionsRecibidasDTO, MedidaDTO, MedidaObtenerDTO, UsuarioObtenerDTO
 from api.models import Compartido, Estadistica, Hogar, Dispositivo, Invitacion, Medida, Usuario
 from api.serializers import CompartidoCrearSerializer, CompartidoObtencionSerializer, DispositivoActualizarSerializer, DispositivoCrearSerializer, DispositivoObtenerByIdSerializer, HogarCrearSerializer, HogarObtenerByIdSerializer, HogarObtenerSerializer, InvitacionCrearSerializer, InvitacionEnviadasSerializer, InvitacionRecibidasSerializer, MedidaCrearSerializer, MedidaObtenerSerializer, UsuarioModificarSerializer, UsuarioObtenerSerializer
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from google.oauth2 import id_token
 from google.auth import transport
 import math 
@@ -426,7 +426,12 @@ class HogarIDView(APIView):
 
         dispositivos = Dispositivo.objects.filter(hogar__id=id)
 
-        hogarDto = HogarObtenerByIdDTO(hogar,dispositivos,idCompartido)
+        auxDispositivos = []
+        for d in dispositivos:
+            if d.verificado:
+                auxDispositivos.append(d)
+
+        hogarDto = HogarObtenerByIdDTO(hogar,auxDispositivos,idCompartido)
 
         serializer = HogarObtenerByIdSerializer(hogarDto)
 
@@ -906,20 +911,182 @@ class LoginView(APIView):
         serializers = UsuarioObtenerSerializer(usuarioDTO)
         return Response(serializers.data,status=status.HTTP_200_OK)
 
+
+def poner0(val):
+    return ""+str(val) if val >= 10 else "0"+str(val)
+
+
 import requests
 class PreciosView(APIView):
     def get(self,request,id,format=None):
         resp = None
-        print(id)
         if id == 1:
             fecha = request.query_params.get("fecha")
-            print(fecha)
             if fecha is None:
                 return Response({"mensage":"Error: para este modo hace falta la fecha"})
             
             resp = requests.get('http://51.38.189.176/pvpc_dia/' + fecha)
+            return Response(resp.json(),status=status.HTTP_200_OK)
         elif id == 2:
             resp = requests.get('http://51.38.189.176/obtener_tarifas/')
+            return Response(resp.json(),status=status.HTTP_200_OK)
+        elif id == 3:
+            resp = {
+                "00":0,
+                "01":0,
+                "02":0,
+                "03":0,
+                "04":0,
+                "05":0,
+                "06":0,
+                "07":0,
+                "08":0,
+                "09":0,
+                "10":0,
+                "11":0,
+                "12":0,
+                "13":0,
+                "14":0,
+                "15":0,
+                "16":0,
+                "17":0,
+                "18":0,
+                "19":0,
+                "20":0,
+                "21":0,
+                "22":0,
+                "23":0,
+            }
+            today = date.today()
+            for i in range(7):
+                aux = requests.get('http://51.38.189.176/pvpc_dia/' + today.strftime('%y-%m-%d'))
+                json = aux.json()
+                for j in range(24):
+                    resp[poner0(j)] = resp[poner0(j)] + json["precios_pvpc"][j][poner0(j)]
+                
+                today = today - timedelta(days=1)
+               
+            for j in range(24):
+                resp[poner0(j)] = round(resp[poner0(j)] / 7,2)
+            
+            return Response(resp,status=status.HTTP_200_OK)
         
-        return Response(resp.json(),status=status.HTTP_200_OK)
+        elif id == 4:
+            resp = {
+                "00":0,
+                "01":0,
+                "02":0,
+                "03":0,
+                "04":0,
+                "05":0,
+                "06":0,
+                "07":0,
+                "08":0,
+                "09":0,
+                "10":0,
+                "11":0,
+                "12":0,
+                "13":0,
+                "14":0,
+                "15":0,
+                "16":0,
+                "17":0,
+                "18":0,
+                "19":0,
+                "20":0,
+                "21":0,
+                "22":0,
+                "23":0,
+            }
+            today = date.today()
+            for i in range(30):
+                aux = requests.get('http://51.38.189.176/pvpc_dia/' + today.strftime('%y-%m-%d'))
+                json = aux.json()
+                for j in range(24):
+                    resp[poner0(j)] = resp[poner0(j)] + json["precios_pvpc"][j][poner0(j)]
+                
+                today = today - timedelta(days=1)
+               
+            for j in range(24):
+                resp[poner0(j)] = round(resp[poner0(j)] / 30,2)
+            
+            return Response(resp,status=status.HTTP_200_OK)
+        elif id == 5 :
+            resp = {
+                "00":0,
+                "01":0,
+                "02":0,
+                "03":0,
+                "04":0,
+                "05":0,
+                "06":0,
+                "07":0,
+                "08":0,
+                "09":0,
+                "10":0,
+                "11":0,
+                "12":0,
+                "13":0,
+                "14":0,
+                "15":0,
+                "16":0,
+                "17":0,
+                "18":0,
+                "19":0,
+                "20":0,
+                "21":0,
+                "22":0,
+                "23":0,
+            }
+            count = {
+                "00":0,
+                "01":0,
+                "02":0,
+                "03":0,
+                "04":0,
+                "05":0,
+                "06":0,
+                "07":0,
+                "08":0,
+                "09":0,
+                "10":0,
+                "11":0,
+                "12":0,
+                "13":0,
+                "14":0,
+                "15":0,
+                "16":0,
+                "17":0,
+                "18":0,
+                "19":0,
+                "20":0,
+                "21":0,
+                "22":0,
+                "23":0,
+            }
+            today = date.today()
+            for i in range(91):
+                aux = requests.get('http://51.38.189.176/pvpc_dia/' + today.strftime('%y-%m-%d'))
+                json = aux.json()
+                for j in range(24):
+                    try:
+                        val = json["precios_pvpc"][j][poner0(j)]
+                        count[poner0(j)] = count[poner0(j)] + 1
+                    except:
+                        val = 0
+                    resp[poner0(j)] = resp[poner0(j)] + val
+                
+                today = today - timedelta(days=1)
+               
+            for j in range(24):
+                if count[poner0(j)] != 0:
+                    resp[poner0(j)] = round(resp[poner0(j)] / count[poner0(j)],2)
+                else:
+                    resp[poner0(j)] = 0
+            
+            return Response(resp,status=status.HTTP_200_OK)
+
+    
+        return Response(status=status.HTTP_200_OK)
+        
         

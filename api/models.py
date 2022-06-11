@@ -44,11 +44,14 @@ class Estadistica(models.Model):
 
     fechaDia = models.DateTimeField()
     sumaDiaKw = models.FloatField()
+    sumaDiaDinero = models.FloatField(default=0.0)
     
     fechaMes = models.DateTimeField()
     sumaMesKw = models.FloatField()
+    sumaMesDinero = models.FloatField(default=0.0)
 
     sumaTotalKw = models.FloatField()
+    sumaTotalDinero = models.FloatField(default=0.0)
     numDiasTotal = models.IntegerField()
     numMesTotal = models.IntegerField()
 

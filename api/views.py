@@ -211,7 +211,7 @@ def autorizar_dispositivo(request):
 
 def calcularPotencia(voltaje, intensidad, desfase):
     #TODO FALTA CALCULAR LA POTENCIA Y VER SI LO DEL DESFASE VA ASI
-    return voltaje * intensidad * math.cos(desfase)
+    return (voltaje * intensidad * math.cos(desfase)) / 1000
 
 def obtenerNumDia(mes,anio):
     if (mes == 1 or mes == 3 or mes == 5 or mes == 7 or mes == 8 or mes == 10 or mes == 12): 
@@ -260,6 +260,7 @@ def guardarEstadistica(idDispositivo, kw):
             anio = ahora.year
 
         estadistica.fechaDia = datetime(year=anio,month=mes,day=dia)
+        estadistica.sumaDiaDinero = 0.0
     
     if ahora <= ultDiaMes:
         estadistica.sumaMesKw = estadistica.sumaMesKw + kw
@@ -279,6 +280,7 @@ def guardarEstadistica(idDispositivo, kw):
         else:
             anio = ahora.year
         estadistica.fechaMes = datetime(year=anio,month=mes,day=1)
+        estadistica.sumaMesDinero = 0.0
     
     t = ahora - datetime.fromtimestamp(estadistica.fechaDia.timestamp())
     tSeconds = t.total_seconds()
@@ -287,6 +289,54 @@ def guardarEstadistica(idDispositivo, kw):
     estadistica.save()
     if estadistica.dispositivo.notificacion and valor > estadistica.dispositivo.limite_maximo:
         enviarCorreoNotificacionLimiteMaximo(estadistica,valor)
+
+def guardarEstadisticaDinero(idDispositivo,listaKwTiempo):
+    #1º Calculo el tiempo transcurrido entre la primera medida y la ultima
+    fechaInicio = listaKwTiempo[0]["tiempo"]
+    fechaFin = listaKwTiempo[-1]["tiempo"]
+
+    tiempoTranscurridoHoras = (fechaFin - fechaInicio).total_seconds() / (60 * 60)
+
+    #2º Calculo todos los kw que se han recodigo
+    count = 0 
+    for medida in listaKwTiempo:
+        count += medida["kw"]
+    
+    #3º Calculo los kwh de estas medidas
+    kwh = count / tiempoTranscurridoHoras
+
+    #4º Pido los datos de precio de hoy
+    aux = requests.get('http://51.38.189.176/pvpc_diario')
+
+    #5º Veo la hora que es ahora (tomo la de la fecha fin)
+    hora = fechaFin.hour
+
+    #6º Busco el precio a esa hora
+    preciokwh = aux.json()["precios_pvpc"][hora][poner0(hora)] / 1000
+
+    #7º Uso el precio para calcular lo gastado
+    gastado = kwh * preciokwh
+
+    #8º Actualizo los valores
+    estadistica = Estadistica.objects.get(dispositivo__id=idDispositivo)
+
+    estadistica.sumaDiaDinero = 0 if estadistica.sumaDiaDinero is None else estadistica.sumaDiaDinero
+    estadistica.sumaMesDinero = 0 if estadistica.sumaMesDinero is None else estadistica.sumaMesDinero
+    estadistica.sumaTotalDinero = 0 if estadistica.sumaTotalDinero is None else estadistica.sumaTotalDinero
+
+    estadistica.sumaTotalDinero = estadistica.sumaTotalDinero + gastado
+    estadistica.sumaMesDinero = estadistica.sumaMesDinero + gastado
+    estadistica.sumaDiaDinero = estadistica.sumaDiaDinero + gastado
+    estadistica.save()
+
+
+    
+
+
+
+
+
+
 
 
 
@@ -746,7 +796,7 @@ class MedidaView(APIView):
                 voltaje = serializer.validated_data.get("voltaje") if serializer.validated_data.get("voltaje") != None else VOLTAJE_ESTANDAR
                 desfase = serializer.validated_data.get("desfase") if serializer.validated_data.get("desfase") != None else DESFASE_ESTANDAR
                 kw = calcularPotencia(intensidad=serializer.validated_data.get("intensidad"),voltaje=voltaje,desfase=desfase)
-                listaKwTiempo.append((kw,serializer.validated_data.get("fecha")))
+                listaKwTiempo.append({"kw":kw,"tiempo":serializer.validated_data.get("fecha")})
                 medida = Medida(
                     dispositivo = dispositivo,
                     fecha = serializer.validated_data.get("fecha"),
@@ -762,6 +812,7 @@ class MedidaView(APIView):
             else:
                 return Response({"mensaje":"Error: El formato de la medida es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
 
+        guardarEstadisticaDinero(dispositivo.id,listaKwTiempo)
         return Response({"tiempoRecogidaMedida":dispositivo.tiempo_medida,"tiempoActualizacionMedida":dispositivo.tiempo_refrescado},status=status.HTTP_201_CREATED)
 
 #ofrecerInvitacion/

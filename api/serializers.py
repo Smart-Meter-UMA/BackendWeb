@@ -38,6 +38,10 @@ class EstadisticaObtenerSerializer(serializers.Serializer):
     mesMinKWHGastado = serializers.DateField()
     maxKWHMensual = serializers.FloatField()
     mesMaxKWHGastado = serializers.DateField()
+    sumaDiaDinero = serializers.FloatField()
+    sumaMesDinero = serializers.FloatField()
+    sumaMediaDiariaDinero = serializers.FloatField()
+    sumaMediaMensualDinero = serializers.FloatField()
 
 class DispositivoObtenerByIdSerializer(serializers.Serializer):
     id = serializers.IntegerField()

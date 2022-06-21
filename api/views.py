@@ -24,9 +24,9 @@ KEY_SECRECT = "key"
 
 def enviarCorreoInvitacion(usuarioToken,hogar,invitado_aux):
     html_content = """
-        <h1>Hola, """ + usuarioToken.nombre + """</h1><br/>
+        <h1>Hola, """ + invitado_aux.nombre + """</h1><br/>
         Este correo sirve para notificarle de que acaba de recibir una invitación
-        de """+invitado_aux.nombre+""" ("""+invitado_aux.email+""") para que pueda
+        de """+usuarioToken.nombre+""" ("""+usuarioToken.email+""") para que pueda
         ver las estadísticas de """+hogar.nombre+"""<br/><br/>
 
         Recureda que puede aceptar o denegar dicha invitación 
@@ -40,7 +40,7 @@ def enviarCorreoInvitacion(usuarioToken,hogar,invitado_aux):
         subject="Nueva invitación",
         body='',
         from_email=settings.EMAIL_HOST_USER,
-        to=[usuarioToken.email],
+        to=[invitado_aux.email],
         cc=[]
     )
 
@@ -142,11 +142,11 @@ def enviarCorreoSeHaSalido(usuarioToken,hogarCompartido,invitante):
 
 def enviarCorreoNotificacionLimiteMaximo(estadistica,actual):
     html_content = """
-    <h1>Hola, """ + estadistica.dispositivo.owner.nombre + """</h1><br/>
+    <h1>Hola, """ + estadistica.dispositivo.hogar.owner.nombre + """</h1><br/>
     Este correo sirve para notificarle de que el dispositivo"""+estadistica.dispositivo.nombre+"""
     ha excedido su limite diario máximo:<br/><br/>
-        Limite máximo: """+estadistica.dispositivo.limite_maximo+"""<br/><br/>
-        Actual: """++"""<br/><br/>
+        Limite máximo: """+str(estadistica.dispositivo.limite_maximo)+"""<br/><br/>
+        Actual: """+str(actual)+"""<br/><br/>
 
     Esto lo puedes ver a través de la pagina de Kproject:<br/><br/>
     URLKPROJECT
@@ -159,7 +159,7 @@ def enviarCorreoNotificacionLimiteMaximo(estadistica,actual):
         subject="Hogar abandonado",
         body='',
         from_email=settings.EMAIL_HOST_USER,
-        to=[estadistica.dispositivo.owner.email],
+        to=[estadistica.dispositivo.hogar.owner.email],
         cc=[]
     )
 
@@ -228,17 +228,31 @@ def obtenerNumDia(mes,anio):
     
     return None
 
-def guardarEstadistica(idDispositivo, kw):
+def guardarEstadistica(idDispositivo, listaKwTiempo):
     ahora = datetime.now()
+
+    #1º Calculo el tiempo transcurrido entre la primera medida y la ultima
+    fechaInicio = listaKwTiempo[0]["tiempo"]
+    fechaFin = listaKwTiempo[-1]["tiempo"]
+
+    tiempoTranscurridoHoras = (fechaFin - fechaInicio).total_seconds() / (60 * 60)
+
+    #2º Calculo todos los kw que se han recodigo
+    count = 0 
+    for medida in listaKwTiempo:
+        count += medida["kw"]
+    
+    #3º Calculo los kwh de estas medidas
+    kwh = count / tiempoTranscurridoHoras
     
     estadistica = Estadistica.objects.get(dispositivo__id=idDispositivo)
-    estadistica.sumaTotalKw = estadistica.sumaTotalKw + kw
+    estadistica.sumaTotalKw = estadistica.sumaTotalKw + kwh
     hoyUltHora = datetime(year=estadistica.fechaDia.year,month=estadistica.fechaDia.month,day=estadistica.fechaDia.day,hour=23,minute=59,second=59,microsecond=999999)
     ultDiaMes = datetime(year=estadistica.fechaMes.year,month=estadistica.fechaMes.month,day=obtenerNumDia(estadistica.fechaMes.month,estadistica.fechaMes.year),hour=23,minute=59,second=59, microsecond=999999)
 
 
     if ahora <= hoyUltHora:
-        estadistica.sumaDiaKw = estadistica.sumaDiaKw + kw
+        estadistica.sumaDiaKw = estadistica.sumaDiaKw + kwh
     else:
         estadistica.numDiasTotal = estadistica.numDiasTotal + 1
         if estadistica.minDiaKw > estadistica.sumaDiaKw:
@@ -247,7 +261,7 @@ def guardarEstadistica(idDispositivo, kw):
         if estadistica.maxDiaKw < estadistica.sumaDiaKw:
             estadistica.fechaMaxDiaKw = datetime(year=estadistica.fechaDia.year,month=estadistica.fechaDia.month,day=estadistica.fechaDia.day,hour=0,minute=0,second=0)
             estadistica.maxDiaKw = estadistica.sumaDiaKw
-        estadistica.sumaDiaKw = kw
+        estadistica.sumaDiaKw = kwh
         dia = (ahora.day + 1)%obtenerNumDia(ahora.month,ahora.year)
         if dia == 1:
             mes = (ahora.month + 1)%12
@@ -263,7 +277,7 @@ def guardarEstadistica(idDispositivo, kw):
         estadistica.sumaDiaDinero = 0.0
     
     if ahora <= ultDiaMes:
-        estadistica.sumaMesKw = estadistica.sumaMesKw + kw
+        estadistica.sumaMesKw = estadistica.sumaMesKw + kwh
     else:
         estadistica.numMesTotal = estadistica.numMesTotal + 1
         if estadistica.minMesKw > estadistica.sumaMesKw:
@@ -273,7 +287,7 @@ def guardarEstadistica(idDispositivo, kw):
             estadistica.fechaMaxMesKwh = datetime(year=estadistica.fechaMes.year,month=estadistica.fechaMes.month,day=1,hour=0,minute=0,second=0)
             estadistica.maxMesKw = estadistica.sumaMesKw
         
-        estadistica.sumaMesKw = kw
+        estadistica.sumaMesKw = kwh
         mes = (ahora.month + 1)%12
         if mes == 1:
             anio = ahora.year + 1
@@ -282,13 +296,9 @@ def guardarEstadistica(idDispositivo, kw):
         estadistica.fechaMes = datetime(year=anio,month=mes,day=1)
         estadistica.sumaMesDinero = 0.0
     
-    t = ahora - datetime.fromtimestamp(estadistica.fechaDia.timestamp())
-    tSeconds = t.total_seconds()
-    tHoras = tSeconds / 3600
-    valor = estadistica.sumaDiaKw / tHoras
     estadistica.save()
-    if estadistica.dispositivo.notificacion and valor > estadistica.dispositivo.limite_maximo:
-        enviarCorreoNotificacionLimiteMaximo(estadistica,valor)
+    if estadistica.dispositivo.notificacion and estadistica.sumaDiaKw > estadistica.dispositivo.limite_maximo:
+        enviarCorreoNotificacionLimiteMaximo(estadistica,estadistica.sumaDiaKw)
 
 def guardarEstadisticaDinero(idDispositivo,listaKwTiempo):
     #1º Calculo el tiempo transcurrido entre la primera medida y la ultima
@@ -585,8 +595,8 @@ class DispositivosView(APIView):
                     fechaMes = datetime(year=ahora.year,month=ahora.month,day=1,hour=0,minute=0,second=0,microsecond=000000),
                     sumaMesKw = 0,
                     sumaTotalKw = 0,
-                    numDiasTotal = 0,
-                    numMesTotal = 0,
+                    numDiasTotal = 1,
+                    numMesTotal = 1,
                     minDiaKw = sys.float_info.max,
                     maxDiaKw = 0,
                     minMesKw = sys.float_info.max,
@@ -806,12 +816,13 @@ class MedidaView(APIView):
                 )
                 try:
                     medida.save()
-                    guardarEstadistica(dispositivo.id,kw)
+                    
                 except:
                     return Response({"mensaje":"Error: La medida no ha podido ser creado."},status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({"mensaje":"Error: El formato de la medida es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
 
+        guardarEstadistica(dispositivo.id,listaKwTiempo)
         guardarEstadisticaDinero(dispositivo.id,listaKwTiempo)
         return Response({"tiempoRecogidaMedida":dispositivo.tiempo_medida,"tiempoActualizacionMedida":dispositivo.tiempo_refrescado},status=status.HTTP_201_CREATED)
 
@@ -971,17 +982,7 @@ import requests
 class PreciosView(APIView):
     def get(self,request,id,format=None):
         resp = None
-        if id == 1:
-            fecha = request.query_params.get("fecha")
-            if fecha is None:
-                return Response({"mensage":"Error: para este modo hace falta la fecha"})
-            
-            resp = requests.get('http://51.38.189.176/pvpc_dia/' + fecha)
-            return Response(resp.json(),status=status.HTTP_200_OK)
-        elif id == 2:
-            resp = requests.get('http://51.38.189.176/obtener_tarifas/')
-            return Response(resp.json(),status=status.HTTP_200_OK)
-        elif id == 3:
+        if id == 3:
             resp = {
                 "00":0,
                 "01":0,
@@ -1136,8 +1137,7 @@ class PreciosView(APIView):
                     resp[poner0(j)] = 0
             
             return Response(resp,status=status.HTTP_200_OK)
-
+           
     
         return Response(status=status.HTTP_200_OK)
-        
         

@@ -86,26 +86,38 @@ class EstadisticaDTO():
         ahora = datetime.now()
         sumaDia = estadistica.sumaDiaKw
         sumaMes = estadistica.sumaMesKw
-        self.consumidoHoy = round(sumaDia / (abs((ahora - datetime.fromtimestamp(estadistica.fechaDia.timestamp()))).total_seconds()/3600),3)
-        self.consumidoMes = round(sumaMes / (abs((ahora - datetime.fromtimestamp(estadistica.fechaMes.timestamp()))).total_seconds()/3600),3)
-        self.minKWHDiario = round((estadistica.minDiaKw / (24) if estadistica.minDiaKw < sys.float_info.max else -1),3)
+        if ahora.day == estadistica.fechaDia.day:
+            self.consumidoHoy = round(sumaDia,3)
+            self.sumaDiaDinero = round(0 if estadistica.sumaDiaDinero is None else estadistica.sumaDiaDinero,2)
+        else:   
+            self.consumidoHoy = 0
+            self.sumaDiaDinero = 0
+        
+        if ahora.month == estadistica.fechaMes.month:
+            self.consumidoMes = round(sumaMes,3)
+            self.sumaMesDinero = round(0 if estadistica.sumaMesDinero is None else estadistica.sumaMesDinero,2)
+        else:
+            self.consumidoMes = 0
+            self.sumaMesDinero = 0
+        
+        self.minKWHDiario = round((estadistica.minDiaKw if estadistica.minDiaKw < sys.float_info.max else -1),3)
         self.diaMinKWHGastado = estadistica.fechaMinDiaKw 
-        self.maxKWHDiario = round((estadistica.maxDiaKw / (24) if estadistica.maxDiaKw > 0 else -1),3)
+        self.maxKWHDiario = round((estadistica.maxDiaKw if estadistica.maxDiaKw > 0 else -1),3)
         self.diaMaxKWHGastado = estadistica.fechaMaxDiaKw
-        self.minKWHMensual = round((estadistica.minMesKw / (24 * obtenerNumDia(estadistica.fechaMinMesKw.month,estadistica.fechaMinMesKw.year)) if estadistica.minMesKw < sys.float_info.max else -1),3)
+        self.minKWHMensual = round((estadistica.minMesKw if estadistica.minMesKw < sys.float_info.max else -1),3)
         self.mesMinKWHGastado = estadistica.fechaMinMesKw
-        self.maxKWHMensual = round((estadistica.maxMesKw / (24 * obtenerNumDia(estadistica.fechaMaxMesKw.month,estadistica.fechaMaxMesKw.year)) if estadistica.maxMesKw > 0 else -1),3)
+        self.maxKWHMensual = round((estadistica.maxMesKw if estadistica.maxMesKw > 0 else -1),3)
         self.mesMaxKWHGastado = estadistica.fechaMaxMesKw
 
         sumaTotal = estadistica.sumaTotalKw
-        self.mediaKWHDiaria = round(sumaTotal / ((estadistica.numDiasTotal * 24) + ((ahora - datetime.fromtimestamp(estadistica.fechaDia.timestamp())).total_seconds()/3600)),3)
-        self.mediaKWHMensual = round(sumaTotal / ((estadistica.numMesTotal * 730.001) + ((ahora - datetime.fromtimestamp(estadistica.fechaMes.timestamp())).total_seconds()/3600)),3)
+        self.mediaKWHDiaria = round(sumaTotal / estadistica.numDiasTotal,3)
+        self.mediaKWHMensual = round(sumaTotal / estadistica.numMesTotal,3)
 
         auxDineroTotal = 0 if estadistica.sumaTotalDinero is None else estadistica.sumaTotalDinero
-        self.sumaDiaDinero = round(0 if estadistica.sumaDiaDinero is None else estadistica.sumaDiaDinero,2)
-        self.sumaMesDinero = round(0 if estadistica.sumaMesDinero is None else estadistica.sumaMesDinero,2)
-        self.sumaMediaDiariaDinero = round(auxDineroTotal / ((estadistica.numDiasTotal * 24) + ((ahora - datetime.fromtimestamp(estadistica.fechaDia.timestamp())).total_seconds()/3600)),2)
-        self.sumaMediaMensualDinero = round(auxDineroTotal / ((estadistica.numMesTotal * 730.001) + ((ahora - datetime.fromtimestamp(estadistica.fechaMes.timestamp())).total_seconds()/3600)),2)
+        
+        self.sumaMediaDiariaDinero = round(auxDineroTotal / estadistica.numDiasTotal,2)
+        self.sumaMediaMensualDinero = round(auxDineroTotal / estadistica.numMesTotal,2)
+
 class DispositivoObtenerByIdDTO():
     def __init__(self, hogar, estadistica):
         self.id = hogar.id

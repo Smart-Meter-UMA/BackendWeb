@@ -262,16 +262,16 @@ def guardarEstadistica(idDispositivo, listaKwTiempo):
             estadistica.fechaMaxDiaKw = datetime(year=estadistica.fechaDia.year,month=estadistica.fechaDia.month,day=estadistica.fechaDia.day,hour=0,minute=0,second=0)
             estadistica.maxDiaKw = estadistica.sumaDiaKw
         estadistica.sumaDiaKw = kwh
-        dia = (ahora.day + 1)%obtenerNumDia(ahora.month,ahora.year)
+        dia = (estadistica.fechaDia.day + 1)%obtenerNumDia(estadistica.fechaDia.month,estadistica.fechaDia.year)
         if dia == 1:
-            mes = (ahora.month + 1)%12
+            mes = (estadistica.fechaDia.month + 1)%12
         else:
-            mes = ahora.month
+            mes = estadistica.fechaDia.month
         
         if mes == 1:
-            anio = ahora.year + 1
+            anio = estadistica.fechaDia.year + 1
         else:
-            anio = ahora.year
+            anio = estadistica.fechaDia.year
 
         estadistica.fechaDia = datetime(year=anio,month=mes,day=dia)
         estadistica.sumaDiaDinero = 0.0
@@ -288,11 +288,11 @@ def guardarEstadistica(idDispositivo, listaKwTiempo):
             estadistica.maxMesKw = estadistica.sumaMesKw
         
         estadistica.sumaMesKw = kwh
-        mes = (ahora.month + 1)%12
+        mes = (estadistica.fechaMes.month + 1)%12
         if mes == 1:
-            anio = ahora.year + 1
+            anio = estadistica.fechaMes.year + 1
         else:
-            anio = ahora.year
+            anio = estadistica.fechaMes.year
         estadistica.fechaMes = datetime(year=anio,month=mes,day=1)
         estadistica.sumaMesDinero = 0.0
     

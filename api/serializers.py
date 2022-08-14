@@ -42,6 +42,32 @@ class EstadisticaObtenerSerializer(serializers.Serializer):
     sumaMesDinero = serializers.FloatField()
     sumaMediaDiariaDinero = serializers.FloatField()
     sumaMediaMensualDinero = serializers.FloatField()
+    
+    fechaSemana = serializers.DateTimeField()
+    sumaSemanaKw = serializers.FloatField()
+    fechaAño = serializers.DateTimeField()
+    sumaAñoKw = serializers.FloatField()
+
+    diaMasConsumidoSemana = serializers.DateField()
+    consumoDiaMasConsumidoSemana = serializers.FloatField()
+    diaMasConsumidoMes = serializers.DateField()
+    consumoDiaMasConsumidoMes = serializers.FloatField()
+    diaMasConsumidoAño = serializers.DateField()
+    consumoDiaMasConsumidoAño = serializers.FloatField()
+    diaMasConsumidoHistoricamente = serializers.DateField()
+    consumoDiaMasConsumidoHistoricamente = serializers.FloatField()
+
+    mesMasConsumidoAño = serializers.DateField()
+    consumoMesMasConsumidoAño = serializers.FloatField()
+    mesMasConsumidoHistoricamente = serializers.DateField()
+    consumoMesMasConsumidoHistoricamente = serializers.FloatField()
+
+    añoMasConsumidoHistoricamente = serializers.DateField()
+    consumoAñoMasConsumidoHistoricamente = serializers.FloatField()
+
+    tramosHistoricoHoras = serializers.JSONField()
+
+
 
 class DispositivoObtenerByIdSerializer(serializers.Serializer):
     id = serializers.IntegerField()

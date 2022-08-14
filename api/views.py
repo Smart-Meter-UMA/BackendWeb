@@ -12,6 +12,7 @@ import math
 import jwt
 from django.core.mail import EmailMultiAlternatives
 import sys
+from api.json_file import formato_json_historicoDiario
 
 CLIENT_ID_MOVIL = "724046535439-h28ieq17aff119i367el50skelqkdgh4.apps.googleusercontent.com"
 CLIENT_ID_WEB = "724046535439-g4gdj010v7qdkpbcpu7qq9edjt61nbva.apps.googleusercontent.com"
@@ -249,18 +250,56 @@ def guardarEstadistica(idDispositivo, listaKwTiempo):
     estadistica.sumaTotalKw = estadistica.sumaTotalKw + kwh
     hoyUltHora = datetime(year=estadistica.fechaDia.year,month=estadistica.fechaDia.month,day=estadistica.fechaDia.day,hour=23,minute=59,second=59,microsecond=999999)
     ultDiaMes = datetime(year=estadistica.fechaMes.year,month=estadistica.fechaMes.month,day=obtenerNumDia(estadistica.fechaMes.month,estadistica.fechaMes.year),hour=23,minute=59,second=59, microsecond=999999)
-
+    ultDiaSemana = datetime(year=estadistica.fechaSemana.year,month=estadistica.fechaSemana.month,day=(estadistica.fechaSemana + timedelta( (6-estadistica.fechaSemana.weekday()) % 7 )).day,hour=23,minute=59,second=59, microsecond=999999)
+    ultDiaAño = datetime(year=estadistica.fechaAño.year,month=12, day= 31,hour=23,minute=59,second=59, microsecond=999999)
 
     if ahora <= hoyUltHora:
         estadistica.sumaDiaKw = estadistica.sumaDiaKw + kwh
     else:
+        dia_anterior = ahora - timedelta(days=1)
+        energia_consumida_diaria_aproximacion = estadistica.sumaDiaKw / 24
+        formato_json_historicoDiario['dia'] = dia_anterior.day 
+        formato_json_historicoDiario['mes'] = dia_anterior.month
+        formato_json_historicoDiario['year'] = dia_anterior.year
+        formato_json_historicoDiario['energia_consumida'] = energia_consumida_diaria_aproximacion
+        estadistica.historicoDiario['list'].append(formato_json_historicoDiario)
         estadistica.numDiasTotal = estadistica.numDiasTotal + 1
+
         if estadistica.minDiaKw > estadistica.sumaDiaKw:
             estadistica.fechaMinDiaKw = datetime(year=estadistica.fechaDia.year,month=estadistica.fechaDia.month,day=estadistica.fechaDia.day,hour=0,minute=0,second=0)
             estadistica.minDiaKw = estadistica.sumaDiaKw
+
         if estadistica.maxDiaKw < estadistica.sumaDiaKw:
             estadistica.fechaMaxDiaKw = datetime(year=estadistica.fechaDia.year,month=estadistica.fechaDia.month,day=estadistica.fechaDia.day,hour=0,minute=0,second=0)
             estadistica.maxDiaKw = estadistica.sumaDiaKw
+
+        if estadistica.sumaDiaKw > estadistica.consumoDiaMasConsumidoHistoricamente:        
+            estadistica.diaMasConsumidoHistoricamente = datetime.today()
+            estadistica.consumoDiaMasConsumidoHistoricamente = estadistica.sumaDiaKw
+
+        if ahora <= ultDiaSemana:
+            if estadistica.sumaDiaKw > estadistica.consumoDiaMasConsumidoSemana:
+                estadistica.diaMasConsumidoSemana = datetime.today()
+                estadistica.consumoDiaMasConsumidoSemana = estadistica.sumaDiaKw
+        else:
+            estadistica.fechaSemana = datetime.today()
+            estadistica.consumoDiaMasConsumidoSemana = 0.0
+
+        if ahora <= ultDiaMes:
+            if estadistica.sumaDiaKw > estadistica.consumoDiaMasConsumidoMes:
+                estadistica.diaMasConsumidoMes = datetime.today()
+                estadistica.consumoDiaMasConsumidoMes = estadistica.sumaDiaKw
+        else:
+            estadistica.consumoDiaMasConsumidoMes = 0.0
+
+        if ahora <= ultDiaAño: 
+            if estadistica.sumaDiaKw > estadistica.consumoDiaMasConsumidoAño:
+                estadistica.diaMasConsumidoAño = datetime.today()
+                estadistica.consumoDiaMasConsumidoAño = estadistica.sumaDiaKw
+        else:
+            estadistica.fechaAño = datetime.today()
+            estadistica.consumoDiaMasConsumidoAño = 0.0
+        
         estadistica.sumaDiaKw = kwh
         dia = (estadistica.fechaDia.day + 1)%obtenerNumDia(estadistica.fechaDia.month,estadistica.fechaDia.year)
         if dia == 1:
@@ -296,6 +335,7 @@ def guardarEstadistica(idDispositivo, listaKwTiempo):
         estadistica.fechaMes = datetime(year=anio,month=mes,day=1)
         estadistica.sumaMesDinero = 0.0
     
+
     estadistica.save()
     if estadistica.dispositivo.notificacion and estadistica.sumaDiaKw > estadistica.dispositivo.limite_maximo:
         enviarCorreoNotificacionLimiteMaximo(estadistica,estadistica.sumaDiaKw)
@@ -590,9 +630,9 @@ class DispositivosView(APIView):
                 ahora = datetime.now() 
                 estadistica = Estadistica(
                     dispositivo = dispositivo,
-                    fechaDia = datetime(year=ahora.year,month=ahora.month,day=ahora.day,hour=0,minute=0,second=0,microsecond=000000),
+                    #fechaDia = datetime(year=ahora.year,month=ahora.month,day=ahora.day,hour=0,minute=0,second=0,microsecond=000000),
                     sumaDiaKw = 0,
-                    fechaMes = datetime(year=ahora.year,month=ahora.month,day=1,hour=0,minute=0,second=0,microsecond=000000),
+                    #fechaMes = datetime(year=ahora.year,month=ahora.month,day=1,hour=0,minute=0,second=0,microsecond=000000),
                     sumaMesKw = 0,
                     sumaTotalKw = 0,
                     numDiasTotal = 1,
@@ -604,8 +644,38 @@ class DispositivosView(APIView):
                     fechaMinDiaKw = ahora,
                     fechaMaxDiaKw = ahora,
                     fechaMinMesKw = ahora,
-                    fechaMaxMesKw = ahora
+                    fechaMaxMesKw = ahora,
+                    diaMasConsumidoSemana = ahora,
+                    diaMasConsumidoMes = ahora,
+                    diaMasConsumidoAño = ahora,
+                    diaMasConsumidoHistoricamente = ahora,
+                    mesMasConsumidoAño = ahora,
+                    mesMasConsumidoHistoricamente = ahora,
+                    añoMasConsumidoHistoricamente = ahora,
+                    fechaDia = ahora,
+                    fechaMes = ahora,
+                    fechaSemana = ahora,
+                    fechaAño = ahora,
+                    sumaSemanaKw = 0,
+                    sumaAñoKw = 0,
+
+                    consumoDiaMasConsumidoSemana = 0,
+                    
+                    consumoDiaMasConsumidoMes = 0,
+                    consumoDiaMasConsumidoAño = 0,
+                    consumoDiaMasConsumidoHistoricamente = 0,
+
+                    consumoMesMasConsumidoAño = 0,
+                    consumoMesMasConsumidoHistoricamente = 0,
+
+                    consumoAñoMasConsumidoHistoricamente = 0,
+                    tramosHistoricoHoras = {'00:00': 0, '01:00': 0, '02:00': 0, '03:00': 0, '04:00': 0, '05:00': 0,
+                                            '06:00': 0, '07:00': 0, '08:00': 0, '09:00': 0, '10:00': 0, '11:00': 0,
+                                            '12:00': 0, '13:00': 0, '14:00': 0, '15:00': 0, '16:00': 0, '17:00': 0,
+                                            '18:00': 0, '19:00': 0, '20:00': 0, '21:00': 0, '22:00': 0, '23:00': 0},
+                    historicoDiario = {'list':[]}
                 )
+                                
                 estadistica.save()
                 objeto = {
                     'id':dispositivo.id,
@@ -823,7 +893,7 @@ class MedidaView(APIView):
                 return Response({"mensaje":"Error: El formato de la medida es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
 
         guardarEstadistica(dispositivo.id,listaKwTiempo)
-        guardarEstadisticaDinero(dispositivo.id,listaKwTiempo)
+        #guardarEstadisticaDinero(dispositivo.id,listaKwTiempo)
         return Response({"tiempoRecogidaMedida":dispositivo.tiempo_medida,"tiempoActualizacionMedida":dispositivo.tiempo_refrescado},status=status.HTTP_201_CREATED)
 
 #ofrecerInvitacion/

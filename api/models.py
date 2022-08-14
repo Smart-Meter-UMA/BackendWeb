@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.postgres.fields import ArrayField
 
 # Create your models here.
 class Usuario(models.Model):
@@ -44,14 +45,14 @@ class Estadistica(models.Model):
 
     fechaDia = models.DateTimeField()
     sumaDiaKw = models.FloatField()
-    sumaDiaDinero = models.FloatField(default=0.0)
+    sumaDiaDinero = models.FloatField()
     
     fechaMes = models.DateTimeField()
     sumaMesKw = models.FloatField()
-    sumaMesDinero = models.FloatField(default=0.0)
+    sumaMesDinero = models.FloatField()
 
     sumaTotalKw = models.FloatField()
-    sumaTotalDinero = models.FloatField(default=0.0)
+    sumaTotalDinero = models.FloatField()
     numDiasTotal = models.IntegerField()
     numMesTotal = models.IntegerField()
 
@@ -65,4 +66,43 @@ class Estadistica(models.Model):
     maxMesKw = models.FloatField()
     fechaMaxMesKw = models.DateField()
 
+    fechaSemana = models.DateTimeField()
+    sumaSemanaKw = models.FloatField()
+    fechaAño = models.DateTimeField()
+    sumaAñoKw = models.FloatField()
 
+    diaMasConsumidoSemana = models.DateField()
+    consumoDiaMasConsumidoSemana = models.FloatField()
+    diaMasConsumidoMes = models.DateField()
+    consumoDiaMasConsumidoMes = models.FloatField()
+    diaMasConsumidoAño = models.DateField()
+    consumoDiaMasConsumidoAño = models.FloatField()
+    diaMasConsumidoHistoricamente = models.DateField()
+    consumoDiaMasConsumidoHistoricamente = models.FloatField()
+
+    mesMasConsumidoAño = models.DateField()
+    consumoMesMasConsumidoAño = models.FloatField()
+    mesMasConsumidoHistoricamente = models.DateField()
+    consumoMesMasConsumidoHistoricamente = models.FloatField()
+
+    añoMasConsumidoHistoricamente = models.DateField()
+    consumoAñoMasConsumidoHistoricamente = models.FloatField()
+
+    tramosHistoricoHoras = models.JSONField()
+
+
+    historicoDiario = models.JSONField()
+    
+#    historicoSemanalDiaMasConsumido = ArrayField(models.JSONField())
+#    historicoMesDiaMasConsumido = ArrayField(models.JSONField())
+#    historicoAnualDiaMasConsumido = ArrayField(models.JSONField())
+
+#    historicoAnualMesMasConsumido = ArrayField(models.JSONField())
+
+
+# class HistoricoDiario(models.Model):
+#     dia = models.IntegerField()
+#     mes = models.IntegerField()
+#     year = models.IntegerField()
+#     energia_consumida = models.IntegerField()
+#     estadistica_asociada = models.ForeignKey(Estadistica, on_delete=models.CASCADE)

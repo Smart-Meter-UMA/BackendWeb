@@ -239,22 +239,31 @@ def guardarEstadistica(idDispositivo, listaKwTiempo):
     tiempoTranscurridoHoras = (fechaFin - fechaInicio).total_seconds() / (60 * 60)
 
     #2º Calculo todos los kw que se han recodigo
+    estadistica = Estadistica.objects.get(dispositivo__id=idDispositivo)
+
     kwh = 0 
     cont = 0
+    kwh_horas = 0 
+
     for medida in listaKwTiempo:
         if listaKwTiempo[-1]["tiempo"] != listaKwTiempo[cont]["tiempo"]:
             kwh += (medida["kw"] * ((listaKwTiempo[cont+1]["tiempo"] - medida["tiempo"]).total_seconds() / (60 * 60)))
+            kwh_horas += (medida["kw"] * ((listaKwTiempo[cont+1]["tiempo"] - medida["tiempo"]).total_seconds() / (60 * 60)))
+            if listaKwTiempo[cont+1]["tiempo"].strftime("%H") > medida["tiempo"].strftime("%H"):
+                estadistica.tramosHistoricoHoras[medida["tiempo"].strftime("%H")+':00'] = estadistica.tramosHistoricoHoras[medida["tiempo"].strftime("%H")+':00'] + kwh_horas
+                kwh_horas = 0
         cont += 1
+    
+    estadistica.tramosHistoricoHoras[listaKwTiempo[-1]["tiempo"].strftime("%H")+':00'] = estadistica.tramosHistoricoHoras[listaKwTiempo[-1]["tiempo"].strftime("%H")+':00'] + kwh_horas
+
     #3º Calculo los kwh de estas medidas
     
-    estadistica = Estadistica.objects.get(dispositivo__id=idDispositivo)
     estadistica.sumaTotalKw = estadistica.sumaTotalKw + kwh
     hoyUltHora = datetime(year=estadistica.fechaDia.year,month=estadistica.fechaDia.month,day=estadistica.fechaDia.day,hour=23,minute=59,second=59,microsecond=999999)
     ultDiaMes = datetime(year=estadistica.fechaMes.year,month=estadistica.fechaMes.month,day=obtenerNumDia(estadistica.fechaMes.month,estadistica.fechaMes.year),hour=23,minute=59,second=59, microsecond=999999)
     ultDiaSemana = datetime(year=estadistica.fechaSemana.year,month=estadistica.fechaSemana.month,day=(estadistica.fechaSemana + timedelta( (6-estadistica.fechaSemana.weekday()) % 7 )).day,hour=23,minute=59,second=59, microsecond=999999)
     ultDiaAño = datetime(year=estadistica.fechaAño.year,month=12, day= 31,hour=23,minute=59,second=59, microsecond=999999)
 
-    estadistica.tramosHistoricoHoras[ahora.strftime("%H")+':00'] = estadistica.tramosHistoricoHoras[ahora.strftime("%H")+':00'] + kwh
 
     if ahora <= hoyUltHora:
         estadistica.sumaDiaKw = estadistica.sumaDiaKw + kwh

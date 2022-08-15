@@ -212,7 +212,7 @@ def autorizar_dispositivo(request):
 
 def calcularPotencia(voltaje, intensidad, desfase):
     #TODO FALTA CALCULAR LA POTENCIA Y VER SI LO DEL DESFASE VA ASI
-    return (voltaje * intensidad * math.cos(desfase)) / 1000
+    return (voltaje * intensidad) / 1000
 
 def obtenerNumDia(mes,anio):
     if (mes == 1 or mes == 3 or mes == 5 or mes == 7 or mes == 8 or mes == 10 or mes == 12): 
@@ -239,12 +239,13 @@ def guardarEstadistica(idDispositivo, listaKwTiempo):
     tiempoTranscurridoHoras = (fechaFin - fechaInicio).total_seconds() / (60 * 60)
 
     #2º Calculo todos los kw que se han recodigo
-    count = 0 
+    kwh = 0 
+    cont = 0
     for medida in listaKwTiempo:
-        count += medida["kw"]
-    
+        if listaKwTiempo[-1]["tiempo"] != listaKwTiempo[cont]["tiempo"]:
+            kwh += (medida["kw"] * ((listaKwTiempo[cont+1]["tiempo"] - medida["tiempo"]).total_seconds() / (60 * 60)))
+        cont += 1
     #3º Calculo los kwh de estas medidas
-    kwh = count / tiempoTranscurridoHoras
     
     estadistica = Estadistica.objects.get(dispositivo__id=idDispositivo)
     estadistica.sumaTotalKw = estadistica.sumaTotalKw + kwh
@@ -252,6 +253,8 @@ def guardarEstadistica(idDispositivo, listaKwTiempo):
     ultDiaMes = datetime(year=estadistica.fechaMes.year,month=estadistica.fechaMes.month,day=obtenerNumDia(estadistica.fechaMes.month,estadistica.fechaMes.year),hour=23,minute=59,second=59, microsecond=999999)
     ultDiaSemana = datetime(year=estadistica.fechaSemana.year,month=estadistica.fechaSemana.month,day=(estadistica.fechaSemana + timedelta( (6-estadistica.fechaSemana.weekday()) % 7 )).day,hour=23,minute=59,second=59, microsecond=999999)
     ultDiaAño = datetime(year=estadistica.fechaAño.year,month=12, day= 31,hour=23,minute=59,second=59, microsecond=999999)
+
+    estadistica.tramosHistoricoHoras[ahora.strftime("%H")+':00'] = estadistica.tramosHistoricoHoras[ahora.strftime("%H")+':00'] + kwh
 
     if ahora <= hoyUltHora:
         estadistica.sumaDiaKw = estadistica.sumaDiaKw + kwh

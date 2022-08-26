@@ -92,13 +92,12 @@ class Estadistica(models.Model):
 
 
     historicoDiario = models.JSONField()
+    historicoMensual = models.JSONField()
+    historicoSemanalDiaMasConsumido = models.JSONField()
+    historicoMesDiaMasConsumido = models.JSONField()
+    historicoAnualDiaMasConsumido = models.JSONField()
+    historicoAnualMesMasConsumido = models.JSONField()
     
-#    historicoSemanalDiaMasConsumido = ArrayField(models.JSONField())
-#    historicoMesDiaMasConsumido = ArrayField(models.JSONField())
-#    historicoAnualDiaMasConsumido = ArrayField(models.JSONField())
-
-#    historicoAnualMesMasConsumido = ArrayField(models.JSONField())
-
 
 # class HistoricoDiario(models.Model):
 #     dia = models.IntegerField()

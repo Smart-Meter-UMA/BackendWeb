@@ -12,7 +12,7 @@ import math
 import jwt
 from django.core.mail import EmailMultiAlternatives
 import sys
-from api.json_file import formato_json_historicoDiario
+from api.json_file import *
 
 CLIENT_ID_MOVIL = "724046535439-h28ieq17aff119i367el50skelqkdgh4.apps.googleusercontent.com"
 CLIENT_ID_WEB = "724046535439-g4gdj010v7qdkpbcpu7qq9edjt61nbva.apps.googleusercontent.com"
@@ -231,12 +231,7 @@ def obtenerNumDia(mes,anio):
 
 def guardarEstadistica(idDispositivo, listaKwTiempo):
     ahora = datetime.now()
-
-    #1º Calculo el tiempo transcurrido entre la primera medida y la ultima
-    fechaInicio = listaKwTiempo[0]["tiempo"]
-    fechaFin = listaKwTiempo[-1]["tiempo"]
-
-    tiempoTranscurridoHoras = (fechaFin - fechaInicio).total_seconds() / (60 * 60)
+    ahora = listaKwTiempo[-1]["tiempo"]
 
     #2º Calculo todos los kw que se han recodigo
     estadistica = Estadistica.objects.get(dispositivo__id=idDispositivo)
@@ -268,12 +263,10 @@ def guardarEstadistica(idDispositivo, listaKwTiempo):
     if ahora <= hoyUltHora:
         estadistica.sumaDiaKw = estadistica.sumaDiaKw + kwh
     else:
-        dia_anterior = ahora - timedelta(days=1)
-        energia_consumida_diaria_aproximacion = estadistica.sumaDiaKw / 24
-        formato_json_historicoDiario['dia'] = dia_anterior.day 
-        formato_json_historicoDiario['mes'] = dia_anterior.month
-        formato_json_historicoDiario['year'] = dia_anterior.year
-        formato_json_historicoDiario['energia_consumida'] = energia_consumida_diaria_aproximacion
+        formato_json_historicoDiario['dia'] = estadistica.fechaDia.day 
+        formato_json_historicoDiario['mes'] = estadistica.fechaDia.month
+        formato_json_historicoDiario['year'] = estadistica.fechaDia.year
+        formato_json_historicoDiario['energia_consumida'] = estadistica.sumaDiaKw
         estadistica.historicoDiario['list'].append(formato_json_historicoDiario)
         estadistica.numDiasTotal = estadistica.numDiasTotal + 1
 
@@ -290,64 +283,53 @@ def guardarEstadistica(idDispositivo, listaKwTiempo):
             estadistica.consumoDiaMasConsumidoHistoricamente = estadistica.sumaDiaKw
 
         if ahora <= ultDiaSemana:
+            estadistica.sumaSemanaKw = estadistica.sumaSemanaKw + estadistica.sumaDiaKw
             if estadistica.sumaDiaKw > estadistica.consumoDiaMasConsumidoSemana:
                 estadistica.diaMasConsumidoSemana = datetime.today()
                 estadistica.consumoDiaMasConsumidoSemana = estadistica.sumaDiaKw
         else:
+            estadistica.sumaSemanaKw = kwh
             estadistica.fechaSemana = datetime.today()
             estadistica.consumoDiaMasConsumidoSemana = 0.0
 
         if ahora <= ultDiaMes:
+            estadistica.sumaMesKw = estadistica.sumaMesKw + estadistica.sumaDiaKw
             if estadistica.sumaDiaKw > estadistica.consumoDiaMasConsumidoMes:
                 estadistica.diaMasConsumidoMes = datetime.today()
                 estadistica.consumoDiaMasConsumidoMes = estadistica.sumaDiaKw
         else:
             estadistica.consumoDiaMasConsumidoMes = 0.0
+            formato_json_historicoMensual['mes'] = estadistica.fechaMes.month
+            formato_json_historicoMensual['year'] = estadistica.fechaMes.year
+            formato_json_historicoMensual['energia_consumida'] = estadistica.sumaMesKw
+            estadistica.historicoMensual['list'].append(formato_json_historicoMensual)
+            estadistica.numMesTotal = estadistica.numMesTotal + 1
+            if estadistica.minMesKw < estadistica.sumaMesKw:
+                estadistica.fechaMinMesKwh = datetime(year=estadistica.fechaMes.year,month=estadistica.fechaMes.month,day=1)
+                estadistica.minMesKw = estadistica.sumaMesKw
+            if estadistica.maxMesKw > estadistica.sumaMesKw:
+                estadistica.fechaMaxMesKwh = datetime(year=estadistica.fechaMes.year,month=estadistica.fechaMes.month,day=1)
+                estadistica.maxMesKw = estadistica.sumaMesKw
+            
+            estadistica.sumaMesKw = kwh
+            estadistica.fechaMes = datetime(year=ahora.year,month=ahora.month,day=1)
+            estadistica.sumaMesDinero = 0.0
 
         if ahora <= ultDiaAño: 
+            estadistica.sumaAñoKw = estadistica.sumaAñoKw + estadistica.sumaDiaKw
             if estadistica.sumaDiaKw > estadistica.consumoDiaMasConsumidoAño:
                 estadistica.diaMasConsumidoAño = datetime.today()
                 estadistica.consumoDiaMasConsumidoAño = estadistica.sumaDiaKw
         else:
+            estadistica.sumaAñoKw = kwh
             estadistica.fechaAño = datetime.today()
             estadistica.consumoDiaMasConsumidoAño = 0.0
         
         estadistica.sumaDiaKw = kwh
-        dia = (estadistica.fechaDia.day + 1)%obtenerNumDia(estadistica.fechaDia.month,estadistica.fechaDia.year)
-        if dia == 1:
-            mes = (estadistica.fechaDia.month + 1)%12
-        else:
-            mes = estadistica.fechaDia.month
-        
-        if mes == 1:
-            anio = estadistica.fechaDia.year + 1
-        else:
-            anio = estadistica.fechaDia.year
-
-        estadistica.fechaDia = datetime(year=anio,month=mes,day=dia)
+        estadistica.fechaDia = estadistica.fechaDia + timedelta(days=1)
         estadistica.sumaDiaDinero = 0.0
     
-    if ahora <= ultDiaMes:
-        estadistica.sumaMesKw = estadistica.sumaMesKw + kwh
-    else:
-        estadistica.numMesTotal = estadistica.numMesTotal + 1
-        if estadistica.minMesKw > estadistica.sumaMesKw:
-            estadistica.fechaMinMesKwh = datetime(year=estadistica.fechaMes.year,month=estadistica.fechaMes.month,day=1,hour=0,minute=0,second=0)
-            estadistica.minMesKw = estadistica.sumaMesKw
-        if estadistica.maxMesKw < estadistica.sumaMesKw:
-            estadistica.fechaMaxMesKwh = datetime(year=estadistica.fechaMes.year,month=estadistica.fechaMes.month,day=1,hour=0,minute=0,second=0)
-            estadistica.maxMesKw = estadistica.sumaMesKw
-        
-        estadistica.sumaMesKw = kwh
-        mes = (estadistica.fechaMes.month + 1)%12
-        if mes == 1:
-            anio = estadistica.fechaMes.year + 1
-        else:
-            anio = estadistica.fechaMes.year
-        estadistica.fechaMes = datetime(year=anio,month=mes,day=1)
-        estadistica.sumaMesDinero = 0.0
     
-
     estadistica.save()
     if estadistica.dispositivo.notificacion and estadistica.sumaDiaKw > estadistica.dispositivo.limite_maximo:
         enviarCorreoNotificacionLimiteMaximo(estadistica,estadistica.sumaDiaKw)
@@ -685,9 +667,14 @@ class DispositivosView(APIView):
                                             '06:00': 0, '07:00': 0, '08:00': 0, '09:00': 0, '10:00': 0, '11:00': 0,
                                             '12:00': 0, '13:00': 0, '14:00': 0, '15:00': 0, '16:00': 0, '17:00': 0,
                                             '18:00': 0, '19:00': 0, '20:00': 0, '21:00': 0, '22:00': 0, '23:00': 0},
-                    historicoDiario = {'list':[]}
+                    historicoDiario = {'list':[]},
+                    historicoMensual = {'list':[]},
+                    historicoSemanalDiaMasConsumido = {'list':[]},
+                    historicoMesDiaMasConsumido = {'list':[]},
+                    historicoAnualDiaMasConsumido = {'list':[]},
+                    historicoAnualMesMasConsumido = {'list':[]}
                 )
-                                
+                           
                 estadistica.save()
                 objeto = {
                     'id':dispositivo.id,

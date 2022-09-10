@@ -56,52 +56,16 @@ class Estadistica(models.Model):
     numDiasTotal = models.IntegerField()
     numMesTotal = models.IntegerField()
 
-    minDiaKw = models.FloatField()
-    fechaMinDiaKw = models.DateField()
-    maxDiaKw = models.FloatField()
-    fechaMaxDiaKw = models.DateField()
-
-    minMesKw = models.FloatField()
-    fechaMinMesKw = models.DateField()
-    maxMesKw = models.FloatField()
-    fechaMaxMesKw = models.DateField()
-
     fechaSemana = models.DateTimeField()
     sumaSemanaKw = models.FloatField()
     fechaAño = models.DateTimeField()
     sumaAñoKw = models.FloatField()
 
-    diaMasConsumidoSemana = models.DateField()
-    consumoDiaMasConsumidoSemana = models.FloatField()
-    diaMasConsumidoMes = models.DateField()
-    consumoDiaMasConsumidoMes = models.FloatField()
-    diaMasConsumidoAño = models.DateField()
-    consumoDiaMasConsumidoAño = models.FloatField()
-    diaMasConsumidoHistoricamente = models.DateField()
-    consumoDiaMasConsumidoHistoricamente = models.FloatField()
-
-    mesMasConsumidoAño = models.DateField()
-    consumoMesMasConsumidoAño = models.FloatField()
-    mesMasConsumidoHistoricamente = models.DateField()
-    consumoMesMasConsumidoHistoricamente = models.FloatField()
-
-    añoMasConsumidoHistoricamente = models.DateField()
-    consumoAñoMasConsumidoHistoricamente = models.FloatField()
-
-    tramosHistoricoHoras = models.JSONField()
-
+    tramosHoras = models.JSONField()
+    tramoSemanal = models.JSONField()
+    tramosMensual = models.JSONField()
 
     historicoDiario = models.JSONField()
     historicoMensual = models.JSONField()
-    historicoSemanalDiaMasConsumido = models.JSONField()
-    historicoMesDiaMasConsumido = models.JSONField()
-    historicoAnualDiaMasConsumido = models.JSONField()
-    historicoAnualMesMasConsumido = models.JSONField()
+    historicoMasConsumido = models.JSONField()
     
-
-# class HistoricoDiario(models.Model):
-#     dia = models.IntegerField()
-#     mes = models.IntegerField()
-#     year = models.IntegerField()
-#     energia_consumida = models.IntegerField()
-#     estadistica_asociada = models.ForeignKey(Estadistica, on_delete=models.CASCADE)

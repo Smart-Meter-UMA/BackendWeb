@@ -86,6 +86,9 @@ class EstadisticaDTO():
         ahora = datetime.now()
         sumaDia = estadistica.sumaDiaKw
         sumaMes = estadistica.sumaMesKw
+
+        self.fechaHoy = estadistica.fechaDia.strftime("%Y-%m-%dT%H:%M") 
+        self.fechaAhora = ahora.strftime("%Y-%m-%dT%H:%M")
         if ahora.day == estadistica.fechaDia.day:
             self.consumidoHoy = round(sumaDia,3)
             self.sumaDiaDinero = round(0 if estadistica.sumaDiaDinero is None else estadistica.sumaDiaDinero,2)
@@ -98,16 +101,7 @@ class EstadisticaDTO():
             self.sumaMesDinero = round(0 if estadistica.sumaMesDinero is None else estadistica.sumaMesDinero,2)
         else:
             self.consumidoMes = 0
-            self.sumaMesDinero = 0
-        
-        self.minKWHDiario = round((estadistica.minDiaKw if estadistica.minDiaKw < sys.float_info.max else -1),3)
-        self.diaMinKWHGastado = estadistica.fechaMinDiaKw 
-        self.maxKWHDiario = round((estadistica.maxDiaKw if estadistica.maxDiaKw > 0 else -1),3)
-        self.diaMaxKWHGastado = estadistica.fechaMaxDiaKw
-        self.minKWHMensual = round((estadistica.minMesKw if estadistica.minMesKw < sys.float_info.max else -1),3)
-        self.mesMinKWHGastado = estadistica.fechaMinMesKw
-        self.maxKWHMensual = round((estadistica.maxMesKw if estadistica.maxMesKw > 0 else -1),3)
-        self.mesMaxKWHGastado = estadistica.fechaMaxMesKw
+            self.sumaMesDinero = 0        
 
         sumaTotal = estadistica.sumaTotalKw
         self.mediaKWHDiaria = round(sumaTotal / estadistica.numDiasTotal,3)
@@ -118,6 +112,27 @@ class EstadisticaDTO():
         self.sumaMediaDiariaDinero = round(auxDineroTotal / estadistica.numDiasTotal,2)
         self.sumaMediaMensualDinero = round(auxDineroTotal / estadistica.numMesTotal,2)
 
+        self.tramosHoras = estadistica.tramosHoras
+        self.tramosHorasMedia = {}
+        for attribute, value in estadistica.tramosHoras.items():
+            self.tramosHorasMedia[attribute] = round(value / estadistica.numDiasTotal,3)
+        
+        self.tramoSemanal = estadistica.tramoSemanal
+        self.tramosSemanalMedia = {}
+        for attribute, value in estadistica.tramoSemanal.items():
+            self.tramosSemanalMedia[attribute] = round(value / (estadistica.numDiasTotal/7),3)
+        
+        self.tramosMensual = estadistica.tramosMensual
+        self.tramosMensualMedia = {}
+        for attribute, value in estadistica.tramosMensual.items():
+            self.tramosMensualMedia[attribute] = round(value / (estadistica.numDiasTotal/30),3)
+        
+        self.historicoDiario = estadistica.historicoDiario
+        self.historicoMensual = estadistica.historicoMensual
+
+        self.historicoMasConsumido = estadistica.historicoMasConsumido
+
+    
 class DispositivoObtenerByIdDTO():
     def __init__(self, hogar, estadistica):
         self.id = hogar.id

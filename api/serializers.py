@@ -26,46 +26,32 @@ class DispositivoCrearSerializer(serializers.Serializer):
     hogar = HogarObtenerSerializer()
 
 class EstadisticaObtenerSerializer(serializers.Serializer):
+    fechaHoy = serializers.DateTimeField()
+    fechaAhora = serializers.DateTimeField()
+    
     consumidoHoy = serializers.FloatField()
     consumidoMes = serializers.FloatField()
     mediaKWHDiaria = serializers.FloatField()
     mediaKWHMensual = serializers.FloatField()
-    minKWHDiario = serializers. FloatField()
-    diaMinKWHGastado = serializers.DateField()
-    maxKWHDiario =  serializers. FloatField()
-    diaMaxKWHGastado = serializers.DateField()
-    minKWHMensual =  serializers. FloatField()
-    mesMinKWHGastado = serializers.DateField()
-    maxKWHMensual = serializers.FloatField()
-    mesMaxKWHGastado = serializers.DateField()
+    
     sumaDiaDinero = serializers.FloatField()
     sumaMesDinero = serializers.FloatField()
     sumaMediaDiariaDinero = serializers.FloatField()
     sumaMediaMensualDinero = serializers.FloatField()
     
-    fechaSemana = serializers.DateTimeField()
-    sumaSemanaKw = serializers.FloatField()
-    fechaAño = serializers.DateTimeField()
-    sumaAñoKw = serializers.FloatField()
+    tramosHoras = serializers.JSONField()
+    tramosHorasMedia = serializers.JSONField()
 
-    diaMasConsumidoSemana = serializers.DateField()
-    consumoDiaMasConsumidoSemana = serializers.FloatField()
-    diaMasConsumidoMes = serializers.DateField()
-    consumoDiaMasConsumidoMes = serializers.FloatField()
-    diaMasConsumidoAño = serializers.DateField()
-    consumoDiaMasConsumidoAño = serializers.FloatField()
-    diaMasConsumidoHistoricamente = serializers.DateField()
-    consumoDiaMasConsumidoHistoricamente = serializers.FloatField()
+    tramoSemanal = serializers.JSONField()
+    tramosSemanalMedia = serializers.JSONField()
 
-    mesMasConsumidoAño = serializers.DateField()
-    consumoMesMasConsumidoAño = serializers.FloatField()
-    mesMasConsumidoHistoricamente = serializers.DateField()
-    consumoMesMasConsumidoHistoricamente = serializers.FloatField()
+    tramosMensual = serializers.JSONField()
+    tramosMensualMedia = serializers.JSONField()
 
-    añoMasConsumidoHistoricamente = serializers.DateField()
-    consumoAñoMasConsumidoHistoricamente = serializers.FloatField()
+    historicoDiario = serializers.JSONField()
+    historicoMensual = serializers.JSONField()
+    historicoMasConsumido = serializers.JSONField()
 
-    tramosHistoricoHoras = serializers.JSONField()
 
 
 

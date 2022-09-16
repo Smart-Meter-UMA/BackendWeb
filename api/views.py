@@ -2,9 +2,9 @@ from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
-from api.dto import CompartidoObtencionDTO, DispositivoObtenerByIdDTO, HogarObtenerByIdDTO, HogarObtenerDTO, InvitacionDTO, InvtiacionsRecibidasDTO, MedidaDTO, MedidaObtenerDTO, UsuarioObtenerDTO
+from api.dto import CompartidoObtencionDTO, DispositivoObtenerByIdDTO, HogarObtenerByIdDTO, HogarObtenerDTO, InvitacionDTO, InvtiacionsRecibidasDTO, MedidaDTO, MedidaObtenerDTO, UsuarioObtenerDTO, PrediccionDiaObtenerDTO
 from api.models import Compartido, Estadistica, Hogar, Dispositivo, Invitacion, Medida, Usuario
-from api.serializers import CompartidoCrearSerializer, CompartidoObtencionSerializer, DispositivoActualizarSerializer, DispositivoCrearSerializer, DispositivoObtenerByIdSerializer, HogarCrearSerializer, HogarObtenerByIdSerializer, HogarObtenerSerializer, InvitacionCrearSerializer, InvitacionEnviadasSerializer, InvitacionRecibidasSerializer, MedidaCrearSerializer, MedidaObtenerSerializer, UsuarioModificarSerializer, UsuarioObtenerSerializer
+from api.serializers import CompartidoCrearSerializer, CompartidoObtencionSerializer, DispositivoActualizarSerializer, DispositivoCrearSerializer, DispositivoObtenerByIdSerializer, HogarCrearSerializer, HogarObtenerByIdSerializer, HogarObtenerSerializer, InvitacionCrearSerializer, InvitacionEnviadasSerializer, InvitacionRecibidasSerializer, MedidaCrearSerializer, MedidaObtenerSerializer, UsuarioModificarSerializer, UsuarioObtenerSerializer, PrediccionDiaSerializer
 from datetime import date, datetime, timedelta, timezone
 from google.oauth2 import id_token
 from google.auth import transport
@@ -13,7 +13,10 @@ import jwt
 from django.core.mail import EmailMultiAlternatives
 import sys
 from api.json_file import *
-import pytz
+import environ
+from bs4 import BeautifulSoup
+env = environ.Env()
+environ.Env.read_env()
 
 CLIENT_ID_MOVIL = "724046535439-h28ieq17aff119i367el50skelqkdgh4.apps.googleusercontent.com"
 CLIENT_ID_WEB = "724046535439-g4gdj010v7qdkpbcpu7qq9edjt61nbva.apps.googleusercontent.com"
@@ -232,6 +235,9 @@ def obtenerNumDia(mes,anio):
 
 def guardarEstadistica(idDispositivo, listaKwTiempo):
     ahora = datetime.fromisoformat(listaKwTiempo[-1]["tiempo"].replace(tzinfo=timezone.utc).isoformat())
+
+    fechaFin = listaKwTiempo[-1]["tiempo"]
+
     estadistica = Estadistica.objects.get(dispositivo__id=idDispositivo)
 
     #Variables auxiliares
@@ -249,6 +255,31 @@ def guardarEstadistica(idDispositivo, listaKwTiempo):
                 kwh_horas = 0
         cont += 1
     
+    #Calcular dinero gastado en energia
+    #4º Pido los datos de precio de hoy
+    aux = requests.get(env("APP_BASE_URL_PRECIOS")+'pvpc_diario')
+
+    #5º Veo la hora que es ahora (tomo la de la fecha fin)
+    hora_dinero = fechaFin.hour
+
+    #6º Busco el precio a esa hora
+    preciokwh = aux.json()["precios_pvpc"][hora_dinero][poner0(hora_dinero)] / 1000
+
+    #7º Uso el precio para calcular lo gastado
+    gastado = kwh * preciokwh
+
+    #8º Actualizo los valores
+    estadistica = Estadistica.objects.get(dispositivo__id=idDispositivo)
+
+    estadistica.sumaDiaDinero = 0 if estadistica.sumaDiaDinero is None else estadistica.sumaDiaDinero
+    estadistica.sumaMesDinero = 0 if estadistica.sumaMesDinero is None else estadistica.sumaMesDinero
+    estadistica.sumaTotalDinero = 0 if estadistica.sumaTotalDinero is None else estadistica.sumaTotalDinero
+
+    estadistica.sumaTotalDinero = estadistica.sumaTotalDinero + gastado
+    estadistica.sumaMesDinero = estadistica.sumaMesDinero + gastado
+    estadistica.sumaDiaDinero = estadistica.sumaDiaDinero + gastado
+    #----------------------Fin calcular dinero gastado-----------------
+
     estadistica.tramosHoras[listaKwTiempo[-1]["tiempo"].strftime("%H")+':00'] = estadistica.tramosHoras[listaKwTiempo[-1]["tiempo"].strftime("%H")+':00'] + kwh_horas
 
     estadistica.sumaTotalKw = estadistica.sumaTotalKw + kwh
@@ -262,7 +293,7 @@ def guardarEstadistica(idDispositivo, listaKwTiempo):
     
     if ahora <= hoyUltHora:
         estadistica.sumaDiaKw = estadistica.sumaDiaKw + kwh
-        
+        estadistica.sumaMesKw = estadistica.sumaMesKw + kwh
     else:
         estadistica.numDiasTotal = estadistica.numDiasTotal + 1
         #Historico diario
@@ -319,11 +350,7 @@ def guardarEstadistica(idDispositivo, listaKwTiempo):
                     if dictionary == array_dias_mas_consumidos_mes[2]:
                         estadistica.historicoMasConsumido["mesDiasMasConsumidos"].pop(idx)
         #---------
-
-        if ahora <= ultDiaMes:
-            estadistica.sumaMesKw = estadistica.sumaMesKw + estadistica.sumaDiaKw
-        else:
-
+        if ahora > ultDiaMes:
 
             #Tramo Mensual
             estadistica.tramosMensual[str(estadistica.fechaMes.month)] = estadistica.tramosMensual[str(estadistica.fechaMes.month)] + estadistica.sumaMesKw
@@ -387,21 +414,16 @@ def guardarEstadistica(idDispositivo, listaKwTiempo):
 
 def guardarEstadisticaDinero(idDispositivo,listaKwTiempo):
     #1º Calculo el tiempo transcurrido entre la primera medida y la ultima
-    fechaInicio = listaKwTiempo[0]["tiempo"]
     fechaFin = listaKwTiempo[-1]["tiempo"]
-
-    tiempoTranscurridoHoras = (fechaFin - fechaInicio).total_seconds() / (60 * 60)
-
-    #2º Calculo todos los kw que se han recodigo
-    count = 0 
+    cont = 0
+    kwh = 0
     for medida in listaKwTiempo:
-        count += medida["kw"]
+        if listaKwTiempo[-1]["tiempo"] != listaKwTiempo[cont]["tiempo"]:
+            kwh += (medida["kw"] * ((listaKwTiempo[cont+1]["tiempo"] - medida["tiempo"]).total_seconds() / (60 * 60)))
+        cont += 1
     
-    #3º Calculo los kwh de estas medidas
-    kwh = count / tiempoTranscurridoHoras
-
     #4º Pido los datos de precio de hoy
-    aux = requests.get('http://51.38.189.176/pvpc_diario')
+    aux = requests.get(env("APP_BASE_URL_PRECIOS")+'pvpc_diario')
 
     #5º Veo la hora que es ahora (tomo la de la fecha fin)
     hora = fechaFin.hour
@@ -423,10 +445,6 @@ def guardarEstadisticaDinero(idDispositivo,listaKwTiempo):
     estadistica.sumaMesDinero = estadistica.sumaMesDinero + gastado
     estadistica.sumaDiaDinero = estadistica.sumaDiaDinero + gastado
     estadistica.save()
-
-
-
-
 
 # Create your views here.
 
@@ -909,7 +927,6 @@ class MedidaView(APIView):
                 return Response({"mensaje":"Error: El formato de la medida es incorrecto."},status=status.HTTP_400_BAD_REQUEST)
 
         guardarEstadistica(dispositivo.id,listaKwTiempo)
-        #guardarEstadisticaDinero(dispositivo.id,listaKwTiempo)
         return Response({"tiempoRecogidaMedida":dispositivo.tiempo_medida,"tiempoActualizacionMedida":dispositivo.tiempo_refrescado},status=status.HTTP_201_CREATED)
 
 #ofrecerInvitacion/
@@ -1065,6 +1082,45 @@ def poner0(val):
 
 
 import requests
+
+class PrediccionPreciosDia(APIView):
+    def post(self, request, format=None):
+        payload = {}
+        payload["fecha"] = request.data["fecha"]
+        payload['hora'] = "00:00"
+        fecha_inicio = datetime.combine(datetime.strptime(payload["fecha"], "%Y-%m-%d"), (datetime.strptime(payload["hora"], "%H:%M")).time())
+
+        html_text_day = requests.post('http://127.0.0.1:30036/day', data=payload)
+        soup_day = BeautifulSoup(html_text_day.text, 'lxml')
+        tabla_datos = soup_day.find('tbody')
+        conjunto_datos = tabla_datos.find_all('td')
+        array_datos_horas = []
+        fecha_aux = fecha_inicio
+        for i,k in zip(conjunto_datos[0::2], conjunto_datos[1::2]):
+            array_datos_horas.append({"real":i.text, "prediccion": k.text, "fecha": fecha_aux.isoformat()})
+            fecha_aux = fecha_aux + timedelta(hours=1)
+        return Response(array_datos_horas,status=status.HTTP_200_OK)
+
+
+class PrediccionPreciosSemana(APIView):
+    def post(self, request, format=None):
+        payload = {}
+        payload["fecha"] = request.data["fecha"]
+        payload['hora'] = "00:00"
+        fecha_inicio = datetime.combine(datetime.strptime(payload["fecha"], "%Y-%m-%d"), (datetime.strptime(payload["hora"], "%H:%M")).time())
+
+        html_text_semana = requests.post('http://127.0.0.1:30036/week', data=payload)
+        soup_week = BeautifulSoup(html_text_semana.text, 'lxml')
+        tabla_datos_week = soup_week.find('tbody')
+        conjunto_datos_week = tabla_datos_week.find_all('td')
+        array_datos_semana = []
+        fecha_aux_semana = fecha_inicio
+        for i,k in zip(conjunto_datos_week[0::2], conjunto_datos_week[1::2]):
+            array_datos_semana.append({"real":i.text, "prediccion": k.text, "fecha": fecha_aux_semana.isoformat()})
+            fecha_aux_semana = fecha_aux_semana + timedelta(hours=1)
+        return Response(array_datos_semana, status=status.HTTP_200_OK)
+
+
 class PreciosView(APIView):
     def get(self,request,id,format=None):
         resp = None

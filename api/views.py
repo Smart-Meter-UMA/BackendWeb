@@ -13,6 +13,7 @@ import jwt
 from django.core.mail import EmailMultiAlternatives
 import sys
 from api.json_file import *
+import json
 import environ
 from bs4 import BeautifulSoup
 env = environ.Env()
@@ -1086,7 +1087,7 @@ import requests
 class PrediccionPreciosDia(APIView):
     def post(self, request, format=None):
         payload = {}
-        payload["fecha"] = request.data["fecha"]
+        payload["fecha"] = str(request.data["fecha"])
         payload['hora'] = "00:00"
         fecha_inicio = datetime.combine(datetime.strptime(payload["fecha"], "%Y-%m-%d"), (datetime.strptime(payload["hora"], "%H:%M")).time())
 
@@ -1099,8 +1100,8 @@ class PrediccionPreciosDia(APIView):
         for i,k in zip(conjunto_datos[0::2], conjunto_datos[1::2]):
             array_datos_horas.append({"real":i.text, "prediccion": k.text, "fecha": fecha_aux.isoformat()})
             fecha_aux = fecha_aux + timedelta(hours=1)
-        return Response(array_datos_horas,status=status.HTTP_200_OK)
-
+        json_resp = {"list": array_datos_horas}
+        return Response(json_resp, status=status.HTTP_200_OK)
 
 class PrediccionPreciosSemana(APIView):
     def post(self, request, format=None):
@@ -1118,7 +1119,8 @@ class PrediccionPreciosSemana(APIView):
         for i,k in zip(conjunto_datos_week[0::2], conjunto_datos_week[1::2]):
             array_datos_semana.append({"real":i.text, "prediccion": k.text, "fecha": fecha_aux_semana.isoformat()})
             fecha_aux_semana = fecha_aux_semana + timedelta(hours=1)
-        return Response(array_datos_semana, status=status.HTTP_200_OK)
+        json_resp = {"list": array_datos_semana}
+        return Response(json_resp, status=status.HTTP_200_OK)
 
 
 class PreciosView(APIView):

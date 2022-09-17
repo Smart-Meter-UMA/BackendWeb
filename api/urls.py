@@ -21,7 +21,7 @@ urlpatterns = [
     path("invitacions/<int:id>", InvitacionsIDView.as_view()),
     path("verificacionDispositivo/", DispositivosVerificacionView.as_view()),
     path("precios/<int:id>", PreciosView.as_view()),
-    path("prediccion/precios/dia", PrediccionPreciosDia.as_view()),
-    path("prediccion/precios/semana", PrediccionPreciosSemana.as_view())
+    path("prediccion/precios/dia/", PrediccionPreciosDia.as_view()),
+    path("prediccion/precios/semana/", PrediccionPreciosSemana.as_view())
 
 ]

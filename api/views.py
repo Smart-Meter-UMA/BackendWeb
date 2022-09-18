@@ -1090,7 +1090,6 @@ class PrediccionPreciosDia(APIView):
         payload["fecha"] = str(request.data["fecha"])
         payload['hora'] = "00:00"
         fecha_inicio = datetime.combine(datetime.strptime(payload["fecha"], "%Y-%m-%d"), (datetime.strptime(payload["hora"], "%H:%M")).time())
-
         html_text_day = requests.post('http://127.0.0.1:30036/day', data=payload)
         soup_day = BeautifulSoup(html_text_day.text, 'lxml')
         tabla_datos = soup_day.find('tbody')
@@ -1098,7 +1097,7 @@ class PrediccionPreciosDia(APIView):
         array_datos_horas = []
         fecha_aux = fecha_inicio
         for i,k in zip(conjunto_datos[0::2], conjunto_datos[1::2]):
-            array_datos_horas.append({"real":i.text, "prediccion": k.text, "fecha": fecha_aux.isoformat()})
+            array_datos_horas.append({"real":i.text.split(" ")[0], "prediccion": k.text.split(" ")[0], "fecha": fecha_aux.isoformat()})
             fecha_aux = fecha_aux + timedelta(hours=1)
         json_resp = {"list": array_datos_horas}
         return Response(json_resp, status=status.HTTP_200_OK)
@@ -1117,7 +1116,7 @@ class PrediccionPreciosSemana(APIView):
         array_datos_semana = []
         fecha_aux_semana = fecha_inicio
         for i,k in zip(conjunto_datos_week[0::2], conjunto_datos_week[1::2]):
-            array_datos_semana.append({"real":i.text, "prediccion": k.text, "fecha": fecha_aux_semana.isoformat()})
+            array_datos_semana.append({"real":i.text.split(" ")[0], "prediccion": k.text.split(" ")[0], "fecha": fecha_aux_semana.isoformat()})
             fecha_aux_semana = fecha_aux_semana + timedelta(hours=1)
         json_resp = {"list": array_datos_semana}
         return Response(json_resp, status=status.HTTP_200_OK)

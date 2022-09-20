@@ -89,19 +89,11 @@ class EstadisticaDTO():
 
         self.fechaHoy = estadistica.fechaDia.strftime("%Y-%m-%dT%H:%M") 
         self.fechaAhora = ahora.strftime("%Y-%m-%dT%H:%M")
-        if ahora.day == estadistica.fechaDia.day:
-            self.consumidoHoy = round(sumaDia,3)
-            self.sumaDiaDinero = round(0 if estadistica.sumaDiaDinero is None else estadistica.sumaDiaDinero,2)
-        else:   
-            self.consumidoHoy = 0
-            self.sumaDiaDinero = 0
+        self.consumidoHoy = round(sumaDia,3)
+        self.sumaDiaDinero = round(0 if estadistica.sumaDiaDinero is None else estadistica.sumaDiaDinero,2)
         
-        if ahora.month == estadistica.fechaMes.month:
-            self.consumidoMes = round(sumaMes,3)
-            self.sumaMesDinero = round(0 if estadistica.sumaMesDinero is None else estadistica.sumaMesDinero,2)
-        else:
-            self.consumidoMes = 0
-            self.sumaMesDinero = 0        
+        self.consumidoMes = round(sumaMes,3)
+        self.sumaMesDinero = round(0 if estadistica.sumaMesDinero is None else estadistica.sumaMesDinero,2)
 
         sumaTotal = estadistica.sumaTotalKw
         self.mediaKWHDiaria = round(sumaTotal / estadistica.numDiasTotal,3)

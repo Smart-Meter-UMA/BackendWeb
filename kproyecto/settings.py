@@ -37,7 +37,7 @@ EMAIL_USE_TLS = True
 
 # Application definition
 
-INSTALLED_APPS = [
+INSTALLED_APPS = [   
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -93,7 +93,7 @@ DATABASES = {
         'NAME': 'KProject', 
         'ENFORCE_SCHEMA' : False,
         'CLIENT' : {
-            'host' : 'mongodb+srv://jesus:jesus@sandbox.nu3me.mongodb.net/myFirstDatabase?retryWrites=true&w=majority&ssl=true&ssl_cert_reqs=CERT_NONE'
+            'host' : 'mongodb+srv://nachopiecemongobd:mongobdkproject@clusterkproject.z3cllwf.mongodb.net/?retryWrites=true&w=majority&ssl=true&ssl_cert_reqs=CERT_NONE'
         }
     }
 }

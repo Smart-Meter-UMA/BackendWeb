@@ -93,7 +93,7 @@ DATABASES = {
         'NAME': 'KProject', 
         'ENFORCE_SCHEMA' : False,
         'CLIENT' : {
-            'host' : 'mongodb+srv://nachopiecemongobd:mongobdkproject@clusterkproject.z3cllwf.mongodb.net/?retryWrites=true&w=majority&ssl=true&ssl_cert_reqs=CERT_NONE'
+            'host' : 'mongodb+srv://usermongodb:usermongodb@cluster0.xgu33up.mongodb.net/?retryWrites=true&w=majority&ssl=true&ssl_cert_reqs=CERT_NONE'
         }
     }
 }

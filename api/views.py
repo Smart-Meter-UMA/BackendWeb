@@ -1154,7 +1154,9 @@ class PreciosView(APIView):
             }
             today = date.today()
             for i in range(7):
-                aux = requests.get('http://51.38.189.176/pvpc_dia/' + today.strftime('%y-%m-%d'))
+                
+                aux = requests.get('http://localhost:8000/pvpc_dia/' + today.strftime('%y-%m-%d'))
+                print(aux.json())
                 json = aux.json()
                 for j in range(24):
                     resp[poner0(j)] = resp[poner0(j)] + json["precios_pvpc"][j][poner0(j)]
@@ -1195,7 +1197,7 @@ class PreciosView(APIView):
             }
             today = date.today()
             for i in range(30):
-                aux = requests.get('http://51.38.189.176/pvpc_dia/' + today.strftime('%y-%m-%d'))
+                aux = requests.get('http://localhost:8000/pvpc_dia/' + today.strftime('%y-%m-%d'))
                 json = aux.json()
                 for j in range(24):
                     resp[poner0(j)] = resp[poner0(j)] + json["precios_pvpc"][j][poner0(j)]
@@ -1261,7 +1263,7 @@ class PreciosView(APIView):
             }
             today = date.today()
             for i in range(91):
-                aux = requests.get('http://51.38.189.176/pvpc_dia/' + today.strftime('%y-%m-%d'))
+                aux = requests.get('http://localhost:8000/pvpc_dia/' + today.strftime('%y-%m-%d'))
                 json = aux.json()
                 for j in range(24):
                     try:
